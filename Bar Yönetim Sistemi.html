@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="tr" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Akıllı Bar Sistemi</title>
+  <style>
+    :root {
+      --bg: #f4f7f6;
+      --card: #ffffff;
+      --muted: #6c757d;
+      --text: #212529;
+      --accent: #2c3e50;
+      --accent-light: #34495e;
+      --line: #dee2e6;
+      --good: #198754;
+      --bad: #dc3545;
+      --warning: #ffc107;
+      --headerH: 60px;
+      --navH: 50px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: var(--bg); color: var(--text); }
+    
+    /* HEADER & TABS */
+    header {
+      position: fixed; left: 0; right: 0; top: 0;
+      background: var(--accent); color: white; height: var(--headerH);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+    .app-nav {
+      position: fixed; left: 0; right: 0; top: var(--headerH);
+      height: var(--navH); background: #fff; border-bottom: 1px solid var(--line);
+      display: flex; z-index: 90; overflow-x: auto;
+    }
+    .app-nav-btn {
+      flex: 1; min-width: 110px; border: none; background: transparent; font-weight: bold; font-size: 14px;
+      color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; white-space: nowrap;
+    }
+    .app-nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: #f8f9fa; }
+
+    /* VIEWS */
+    .app-view { display: none; padding-top: calc(var(--headerH) + var(--navH) + 10px); padding-bottom: 30px;}
+    .app-view.active { display: block; }
+
+    /* ================= SINGLE TABLE MAP ================= */
+    .map-container { padding: 10px; max-width: 1000px; margin: 0 auto; }
+    .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+
+    .table-card {
+      background: #fff; border: 2px solid var(--line); border-radius: 10px;
+      padding: 10px 5px; cursor: pointer; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; min-height: 85px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; position: relative;
+    }
+    .table-card.state-0 { background-color: #fff; opacity: 0.8;}
+    .table-card.state-1 { background-color: #ffeeba; border-color: var(--warning); transform: scale(1.03); box-shadow: 0 4px 8px rgba(255,193,7,0.3);} 
+    .table-card.state-2 { background-color: #d4edda; border-color: var(--good); } 
+
+    .table-name { font-size: 20px; font-weight: 900; margin-bottom: 2px; }
+    .timer { font-size: 13px; font-family: monospace; font-weight: bold; color: var(--bad); }
+    .waiting-text { font-size: 11px; font-weight: bold; margin-bottom: 2px;}
+    .state-1 .waiting-text { color: #d39e00; }
+    .state-2 .waiting-text { color: var(--good); }
+    .state-2 .timer { color: var(--good); }
+
+    .btn { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
+    
+    .view-order-btn {
+      position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.1); border: none;
+      border-radius: 4px; padding: 2px 5px; font-size: 12px; cursor: pointer; font-weight: bold;
+    }
+
+    /* ================= MODAL ================= */
+    #tableModalBackdrop { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+    .modal-box { background: #fff; padding: 20px; border-radius: 15px; width: 92%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 15px; }
+    .modal-header h3 { margin: 0; font-size: 20px; color: var(--accent); }
+    
+    .ticket-box { background: #f8f9fa; border: 1px dashed #adb5bd; padding: 10px; border-radius: 10px; margin-bottom: 10px; min-height: 80px;}
+    .batch-header { font-size: 14px; font-weight: 900; color: var(--good); border-bottom: 1px solid var(--good); padding-bottom: 5px; margin-top: 15px; margin-bottom: 10px; }
+    .batch-header:first-child { margin-top: 0; }
+    .ticket-item { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; border-bottom: 1px solid var(--line); padding: 8px 0; align-items: center;}
+    .ticket-item:last-child { border-bottom: none; }
+    .ticket-empty { text-align: center; color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+    .modal-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .btn-lg { padding: 12px; font-size: 15px; border-radius: 10px; font-weight: bold; width: 100%; border:none; cursor:pointer;}
+
+    /* ================= BAR MENU ================= */
+    .bar-menu-container { max-width: 900px; margin: 0 auto; padding: 10px; }
+    .order-status-bar { background: var(--accent-light); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .table-selector-area { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: bold;}
+    .table-selector-area select { padding: 8px; border-radius: 6px; border: none; font-size: 15px; font-weight: bold; }
+    .btn-return { background: var(--good); color: white; padding: 10px 20px; border-radius: 8px; border:none; font-weight:bold; cursor:pointer;}
+
+    .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; }
+    .cat-btn { white-space: nowrap; padding: 10px 15px; background: #e9ecef; border: none; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .cat-btn.active { background: var(--accent); color: white; }
+
+    .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .item-square { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px; text-align: center; }
+    .item-name { font-weight: 800; font-size: 13px; margin-bottom: 8px; color: var(--text); }
+    
+    .variants-row { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+    .btn-variant { background: #f8f9fa; border: 1px solid var(--line); padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; flex: 1; cursor: pointer; }
+
+    .qty-controls { display: flex; align-items: center; gap: 8px; }
+    .qty-btn { background: var(--line); color: var(--text); border: none; border-radius: 4px; width: 28px; height: 28px; font-weight: bold; cursor: pointer; font-size: 15px; }
+    .qty-btn.minus { background: var(--bad); color: white; }
+    .qty-btn.plus { background: var(--good); color: white; }
+    .qty-val { font-weight: 900; min-width: 15px; text-align: center; font-size: 16px; color: var(--accent); }
+
+    /* ================= DASHBOARD (STATS) ================= */
+    .stats-container { max-width: 900px; margin: 0 auto; padding: 10px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); text-align: center; }
+    .stat-value { font-size: 32px; font-weight: 900; color: var(--accent); margin-bottom: 5px; }
+    .stat-label { font-size: 14px; color: var(--muted); font-weight: bold; }
+    
+    .stats-section { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; }
+    .stats-title { font-size: 18px; font-weight: 800; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid var(--line); padding-bottom: 10px; color: var(--accent); }
+    
+    .top-item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--line); font-weight: bold; font-size: 15px;}
+    .top-item-row:last-child { border-bottom: none; }
+    
+    .cat-stat-row { margin-bottom: 15px; }
+    .cat-stat-header { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+    .progress-bar-bg { width: 100%; background: #e9ecef; border-radius: 8px; height: 12px; overflow: hidden; }
+    .progress-bar-fill { background: var(--accent-light); height: 100%; border-radius: 8px; }
+
+  </style>
+</head>
+<body>
+
+<header><h1>Bar Yönetim Sistemi ☕</h1></header>
+
+<nav class="app-nav">
+  <button class="app-nav-btn active" onclick="switchTab('mapView', this)" id="tabMap">📍 Masalar</button>
+  <button class="app-nav-btn" onclick="switchTab('menuView', this)" id="tabMenu">📋 Sipariş Ekle</button>
+  <button class="app-nav-btn" onclick="switchTab('statsView', this)" id="tabStats">📊 Raporlar</button>
+</nav>
+
+<div id="mapView" class="app-view active">
+  <div class="map-container">
+    <div id="allTablesGrid" class="grid-container active"></div>
+    <button class="btn" style="background:var(--bad); color:white; width:100%; margin-top:20px; padding:15px;" onclick="resetAllApp()">Tüm Sistemi Sıfırla (Yeni Vardiya)</button>
+  </div>
+</div>
+
+<div id="menuView" class="app-view">
+  <div class="bar-menu-container">
+    <div class="order-status-bar">
+      <div class="table-selector-area">
+        Masa Seç:
+        <select id="menuTableSelect">
+          <option value="">Seçiniz...</option>
+        </select>
+      </div>
+      <button class="btn-return" onclick="assignOrderToTable()">Masaya Gönder</button>
+    </div>
+    
+    <div style="background:#fff; padding:10px; border-radius:8px; margin-bottom:15px; border:1px solid var(--line);">
+      <strong>Yeni Eklenecek İçecekler: </strong> 
+      <div id="tempCartList" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">Boş</div>
+    </div>
+
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="items-grid" id="itemsGrid"></div>
+  </div>
+</div>
+
+<div id="statsView" class="app-view">
+  <div class="stats-container">
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotalDrinks">0</div>
+        <div class="stat-label">Toplam İçecek</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statTotalTables">0</div>
+        <div class="stat-label">Hizmet Verilen Masa</div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <h3 class="stats-title">🏆 En Çok Satan 5 İçecek</h3>
+      <div id="topItemsList"></div>
+    </div>
+
+    <div class="stats-section">
+      <h3 class="stats-title">📈 Kategori Dağılımı</h3>
+      <div id="catDistributionList"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="tableModalBackdrop">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalTableTitle">Masa Siparişi</h3>
+      <button class="btn" style="background:#e9ecef; padding:5px 10px;" onclick="closeOrderModal()">✖</button>
+    </div>
+    <div class="ticket-box" id="ticketBox"></div>
+    
+    <div class="modal-actions">
+      <button class="btn-lg" style="background:var(--accent); color:white;" onclick="modalOpenMenu()">
+        ➕ İçecek Düzenle / Ekle
+      </button>
+      
+      <button class="btn-lg" style="background:var(--warning); color:#000;" onclick="modalMarkReady()" id="btnReady">
+        ✔️ İçecekler Hazır (Gönderildi)
+      </button>
+      
+      <button class="btn-lg" style="background:var(--good); color:white;" onclick="modalCheckoutTable()">
+        💰 Hesap Al & Masayı Kapat
+      </button>
+      
+      <button class="btn-lg" style="background:var(--bad); color:white;" onclick="modalCancelTable()">
+        🗑️ İptal Et (Hatalı Masa)
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   MENU DATA & CATEGORY MAPPING (For Stats)
+   ========================================================= */
+const BAR_MENU = [
+  {
+    category: "Sıcak İçecekler",
+    items: [
+      { id:"esp", name: "Espresso", variants: ["Tek", "Double"] },
+      { id:"ame", name: "Americano" },
+      { id:"cap", name: "Cappuccino" },
+      { id:"lat_mac", name: "Latte Macchiato" },
+      { id:"lat", name: "Caffe Latte" },
+      { id:"moc", name: "Caffe Mocha" },
+      { id:"kar", name: "Karamel Caffe Latte" },
+      { id:"flt", name: "Flat White" },
+      { id:"esp_mac", name: "Espresso Macchiato" },
+      { id:"trk", name: "Türk Kahvesi", variants: ["Tek", "Double"] },
+      { id:"fil", name: "Filtre Kahve" },
+      { id:"sut", name: "Süt 100 ml" },
+      { id:"cay", name: "Çay" },
+      { id:"fincan_cay", name: "Fincan Çay" }
+    ]
+  },
+  {
+    category: "Soğuk Kahveler",
+    items: [
+      { id:"i_ame", name: "Ice Americano" },
+      { id:"i_lat", name: "Ice Latte" },
+      { id:"i_kar", name: "Ice Karamel Latte" },
+      { id:"i_moc", name: "Ice Caffe Mocha" }
+    ]
+  },
+  {
+    category: "Soğuk İçecekler",
+    items: [
+      { id:"cok", name: "Coca Cola" },
+      { id:"cok_z", name: "Coca Cola Zero" },
+      { id:"fan", name: "Fanta" },
+      { id:"spr", name: "Sprite" },
+      { id:"fuse", name: "Fuse Tea", variants: ["Şeftali", "Limon"] },
+      { id:"cappy", name: "Cappy", variants: ["Vişne", "Karışık"] },
+      { id:"su", name: "Su" },
+      { id:"ayran", name: "Ayran" },
+      { id:"lim", name: "Limonata" },
+      { id:"gazoz", name: "Uludağ Gazoz" },
+      { id:"frutti", name: "Frutti Extra" },
+      { id:"gazoz_port", name: "Gazoz Portakal" },
+      { id:"sod", name: "Soda" },
+      { id:"chu", name: "Churchill" }
+    ]
+  }
+];
+
+// إنشاء خريطة لمعرفة فئة كل مشروب (للاستخدام في الإحصائيات)
+let itemCategoryMap = {};
+BAR_MENU.forEach(cat => {
+  cat.items.forEach(it => {
+    itemCategoryMap[it.id] = cat.category;
+  });
+});
+
+/* =========================================================
+   1. GLOBAL STATE & NAVIGATION
+   ========================================================= */
+function switchTab(viewId, btnEl) {
+  document.querySelectorAll('.app-nav-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.app-view').forEach(view => view.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+  document.getElementById(viewId).classList.add('active');
+  
+  if(viewId === 'statsView') {
+    renderStats(); // تحديث الإحصائيات عند فتح الشاشة
+  }
+}
+
+/* =========================================================
+   2. TABLE MAP LOGIC
+   ========================================================= */
+let tablesData = JSON.parse(localStorage.getItem('barTableMap_v5')) || {};
+let salesData = JSON.parse(localStorage.getItem('barSalesHistory_v1')) || { totalDrinks: 0, totalTables: 0, items: {}, categories: {} };
+
+function initDataIfMissing() {
+  const sections = [
+    { id: 'inside', prefix: '', count: 10 },
+    { id: 'outside', prefix: 'B', count: 6 },
+    { id: 'upstairs', prefix: 'A', count: 9 }
+  ];
+  let isMissing = Object.keys(tablesData).length === 0;
+  sections.forEach(sec => {
+    for (let i = 1; i <= sec.count; i++) {
+      for (let part = 1; part <= 2; part++) {
+        let key = `${sec.id}-${i}-${part}`;
+        let name = (part === 1) ? `${sec.prefix}${i}` : `${sec.prefix}${i}/2`;
+        if (isMissing || !tablesData[key]) {
+          tablesData[key] = { state: 0, startTime: null, batches: [], name: name, section: sec.id, idNum: i, partNum: part };
+        }
+      }
+    }
+  });
+}
+
+function renderTableMap() {
+  initDataIfMissing();
+  let grid = document.getElementById('allTablesGrid');
+  let selector = document.getElementById('menuTableSelect');
+  grid.innerHTML = '';
+  let currentSelection = selector.value;
+  selector.innerHTML = '<option value="">Seçiniz...</option>';
+
+  let tablesArray = Object.keys(tablesData).map(k => { return { key: k, ...tablesData[k] }; });
+
+  tablesArray.sort((a, b) => {
+    if (a.state === 1 && b.state === 1) return a.startTime - b.startTime;
+    if (a.state === 1) return -1;
+    if (b.state === 1) return 1;
+    if (a.state === 2 && b.state === 2) return a.startTime - b.startTime;
+    if (a.state === 2) return -1;
+    if (b.state === 2) return 1;
+
+    let secOrder = { 'inside': 1, 'outside': 2, 'upstairs': 3 };
+    if (secOrder[a.section] !== secOrder[b.section]) return secOrder[a.section] - secOrder[b.section];
+    if (a.idNum !== b.idNum) return a.idNum - b.idNum;
+    return a.partNum - b.partNum;
+  });
+
+  tablesArray.forEach(t => {
+    let card = document.createElement('div');
+    card.id = `card-${t.key}`;
+    card.className = `table-card state-${t.state}`;
+    let html = `<div class="table-name">${t.name}</div>`;
+    
+    if (t.state === 1) {
+      html += `<div class="waiting-text">⏳ Hazırlanıyor</div><div class="timer" id="timer-${t.key}">00:00</div>`;
+    } else if (t.state === 2) {
+      html += `<div class="waiting-text">✔️ Gönderildi</div><div class="timer" id="timer-${t.key}">00:00</div>`;
+    }
+
+    if (t.batches && t.batches.length > 0) {
+      html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`;
+    }
+    card.innerHTML = html;
+    card.onclick = () => handleTableClick(t.key);
+    grid.appendChild(card);
+
+    let opt = document.createElement('option');
+    opt.value = t.key;
+    opt.innerText = t.name + ((t.state > 0) ? " (Açık)" : "");
+    selector.appendChild(opt);
+  });
+
+  selector.value = currentSelection; 
+  localStorage.setItem('barTableMap_v5', JSON.stringify(tablesData));
+  updateTimers(); 
+}
+
+function handleTableClick(key) {
+  let data = tablesData[key];
+  if (data.state === 0) {
+    data.state = 1; 
+    data.startTime = Date.now();
+  } 
+  else if (data.state === 1) {
+    data.state = 2; 
+  } 
+  else if (data.state === 2) {
+    // فتح النافذة المنبثقة بدلاً من الإغلاق المباشر لتسجيل الدفع
+    viewOrderModal(key, data.name);
+    return; // إيقاف إكمال الدالة لأننا سنكمل من الـ Modal
+  }
+  renderTableMap();
+}
+
+// ================= MODAL FUNCTIONS =================
+let selectedTableKeyModal = null;
+
+function viewOrderModal(key, name) {
+  selectedTableKeyModal = key;
+  let tableData = tablesData[key];
+  let tableBatches = tableData.batches;
+  
+  let box = document.getElementById('ticketBox');
+  document.getElementById('modalTableTitle').innerText = `Masa ${name} Siparişi`;
+  
+  // إخفاء زر "جاهز" إذا كانت الطاولة جاهزة بالفعل
+  document.getElementById('btnReady').style.display = (tableData.state === 1) ? 'block' : 'none';
+
+  if (!tableBatches || tableBatches.length === 0) {
+    box.innerHTML = `<div class="ticket-empty">Henüz içecek eklenmedi.</div>`;
+  } else {
+    let html = "";
+    tableBatches.forEach((batch, bIndex) => {
+      html += `<div class="batch-header">Sipariş ${bIndex + 1} <small style="color:#6c757d; float:right;">${batch.time}</small></div>`;
+      batch.items.forEach((item, iIndex) => {
+        html += `<div class="ticket-item">
+                   <span>${item.name}</span>
+                   <div class="qty-controls">
+                     <button class="qty-btn minus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, -1)">-</button>
+                     <span class="qty-val">${item.qty}</span>
+                     <button class="qty-btn plus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, 1)">+</button>
+                   </div>
+                 </div>`;
+      });
+    });
+    box.innerHTML = html;
+  }
+  document.getElementById('tableModalBackdrop').style.display = 'flex';
+}
+
+function closeOrderModal() { document.getElementById('tableModalBackdrop').style.display = 'none'; selectedTableKeyModal = null;}
+
+function editBatchItem(tableKey, batchIndex, itemIndex, amount) {
+  let data = tablesData[tableKey];
+  let batch = data.batches[batchIndex];
+  let item = batch.items[itemIndex];
+
+  item.qty += amount;
+  if (item.qty <= 0) batch.items.splice(itemIndex, 1); 
+  if (batch.items.length === 0) data.batches.splice(batchIndex, 1); 
+
+  if (data.batches.length === 0) {
+    data.state = 0; data.startTime = null; closeOrderModal();
+  }
+
+  localStorage.setItem('barTableMap_v5', JSON.stringify(tablesData));
+  if (document.getElementById('tableModalBackdrop').style.display === 'flex') {
+    viewOrderModal(tableKey, data.name); 
+  }
+  renderTableMap(); 
+}
+
+function modalOpenMenu() {
+  let data = tablesData[selectedTableKeyModal];
+  data.startTime = Date.now(); 
+  data.state = 1; // يعود لوضع التحضير
+  document.getElementById('menuTableSelect').value = selectedTableKeyModal;
+  closeOrderModal();
+  switchTab('menuView', document.getElementById('tabMenu'));
+}
+
+function modalMarkReady() {
+  tablesData[selectedTableKeyModal].state = 2; 
+  renderTableMap(); closeOrderModal();
+}
+
+// 💰 إغلاق الطاولة وتسجيلها في الإحصائيات
+function modalCheckoutTable() {
+  if(confirm("Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?")) {
+    let data = tablesData[selectedTableKeyModal];
+    
+    // ترحيل البيانات للإحصائيات
+    if(data.batches && data.batches.length > 0) {
+      salesData.totalTables += 1;
+      data.batches.forEach(batch => {
+        batch.items.forEach(item => {
+          salesData.totalDrinks += item.qty;
+          salesData.items[item.name] = (salesData.items[item.name] || 0) + item.qty;
+          
+          let cat = itemCategoryMap[item.baseId] || "Diğer";
+          salesData.categories[cat] = (salesData.categories[cat] || 0) + item.qty;
+        });
+      });
+      localStorage.setItem('barSalesHistory_v1', JSON.stringify(salesData));
+    }
+
+    // تفريغ الطاولة
+    data.state = 0; data.startTime = null; data.batches = [];
+    renderTableMap(); closeOrderModal();
+  }
+}
+
+// 🗑️ إلغاء الطاولة (بدون تسجيل)
+function modalCancelTable() {
+  if(confirm("DİKKAT: Bu işlem masayı silecek ve satışlara EKLENMEYECEKTİR. Onaylıyor musunuz?")) {
+    let data = tablesData[selectedTableKeyModal];
+    data.state = 0; data.startTime = null; data.batches = [];
+    renderTableMap(); closeOrderModal();
+  }
+}
+
+function updateTimers() {
+  let now = Date.now();
+  for (const key in tablesData) {
+    let data = tablesData[key];
+    if (data.state > 0 && data.startTime) {
+      let diffSecs = Math.floor((now - data.startTime) / 1000);
+      let mins = Math.floor(diffSecs / 60); let secs = diffSecs % 60;
+      let formattedTime = (mins < 10 ? "0"+mins : mins) + ":" + (secs < 10 ? "0"+secs : secs);
+      let timerEl = document.getElementById(`timer-${key}`);
+      if(timerEl) timerEl.innerText = formattedTime;
+    }
+  }
+}
+
+setInterval(updateTimers, 1000);
+
+/* =========================================================
+   3. BAR MENU LOGIC (TEMP CART)
+   ========================================================= */
+let activeCatIndex = 0;
+let tempCart = {}; 
+
+function renderCategories() {
+  const tabs = document.getElementById("catTabs"); tabs.innerHTML = "";
+  BAR_MENU.forEach((cat, index) => {
+    let btn = document.createElement("button");
+    btn.className = `cat-btn ${index === activeCatIndex ? 'active' : ''}`;
+    btn.innerText = cat.category;
+    btn.onclick = () => { activeCatIndex = index; renderCategories(); renderItems(); };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderItems() {
+  const grid = document.getElementById("itemsGrid"); grid.innerHTML = "";
+  let items = BAR_MENU[activeCatIndex].items;
+
+  items.forEach(it => {
+    let square = document.createElement("div"); square.className = "item-square";
+    let html = `<div class="item-name">${it.name}</div>`;
+    if (it.variants) {
+      html += `<div class="variants-row">`;
+      it.variants.forEach(v => { html += `<button class="btn-variant" onclick="addTempItem('${it.id}', '${it.name}', '${v}')">${v}</button>`; });
+      html += `</div>`;
+    } else {
+      html += `<button class="btn" style="background:var(--accent); color:white; width:100%;" onclick="addTempItem('${it.id}', '${it.name}', '')">Ekle</button>`;
+    }
+    square.innerHTML = html; grid.appendChild(square);
+  });
+}
+
+function addTempItem(id, name, variant) {
+  let key = variant ? `${id}_${variant}` : id;
+  let displayName = variant ? `${name} (${variant})` : name;
+  if (!tempCart[key]) { tempCart[key] = { baseId: id, name: displayName, qty: 0, id: key }; }
+  tempCart[key].qty++; updateTempCartUI();
+}
+
+function changeTempQty(key, amount) {
+  if (tempCart[key]) {
+    tempCart[key].qty += amount;
+    if (tempCart[key].qty <= 0) delete tempCart[key];
+    updateTempCartUI();
+  }
+}
+
+function updateTempCartUI() {
+  let keys = Object.keys(tempCart);
+  let container = document.getElementById("tempCartList");
+  if (keys.length === 0) { container.innerHTML = "<span style='color:var(--muted); font-size:14px;'>Boş</span>"; return; }
+  
+  let html = "";
+  keys.forEach(k => {
+    let item = tempCart[k];
+    html += `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid var(--line);">
+        <span style="font-size:15px; font-weight:bold;">${item.name}</span>
+        <div class="qty-controls">
+          <button class="qty-btn minus" onclick="changeTempQty('${k}', -1)">-</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn plus" onclick="changeTempQty('${k}', 1)">+</button>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+function assignOrderToTable() {
+  let selTableKey = document.getElementById('menuTableSelect').value;
+  if (!selTableKey) { alert("Lütfen bir masa seçin!"); return; }
+  if (Object.keys(tempCart).length === 0) { alert("Lütfen önce içecek ekleyin!"); return; }
+
+  let tableData = tablesData[selTableKey];
+  let d = new Date();
+  let timeStr = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
+  
+  let newBatch = {
+    time: timeStr,
+    items: Object.keys(tempCart).map(k => ({ id: tempCart[k].id, baseId: tempCart[k].baseId, name: tempCart[k].name, qty: tempCart[k].qty }))
+  };
+  
+  if (!tableData.batches) tableData.batches = [];
+  tableData.batches.push(newBatch);
+
+  if (tableData.state === 0 || tableData.state === 2) {
+    if(tableData.state === 0) tableData.startTime = Date.now();
+    tableData.state = 1;
+  }
+
+  tempCart = {}; updateTempCartUI(); document.getElementById('menuTableSelect').value = ""; 
+  renderTableMap(); switchTab('mapView', document.getElementById('tabMap')); 
+}
+
+/* =========================================================
+   4. DASHBOARD / STATS LOGIC
+   ========================================================= */
+function renderStats() {
+  document.getElementById('statTotalDrinks').innerText = salesData.totalDrinks;
+  document.getElementById('statTotalTables').innerText = salesData.totalTables;
+
+  // Render Top Items
+  let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] }));
+  itemsArr.sort((a, b) => b.qty - a.qty); // ترتيب تنازلي
+  let top5 = itemsArr.slice(0, 5);
+  
+  let topHtml = "";
+  if(top5.length === 0) topHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
+  top5.forEach(it => {
+    topHtml += `<div class="top-item-row"><span>${it.name}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`;
+  });
+  document.getElementById('topItemsList').innerHTML = topHtml;
+
+  // Render Categories Progress Bars
+  let catHtml = "";
+  let totalD = salesData.totalDrinks || 1; // منع القسمة على صفر
+  
+  let catsArr = Object.keys(salesData.categories).map(k => ({ name: k, qty: salesData.categories[k] }));
+  catsArr.sort((a, b) => b.qty - a.qty);
+
+  if(catsArr.length === 0) catHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
+  catsArr.forEach(c => {
+    let pct = Math.round((c.qty / totalD) * 100);
+    catHtml += `
+      <div class="cat-stat-row">
+        <div class="cat-stat-header"><span>${c.name}</span><span>%${pct} (${c.qty})</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div>
+      </div>
+    `;
+  });
+  document.getElementById('catDistributionList').innerHTML = catHtml;
+}
+
+function resetAllApp() {
+  if(confirm("TÜM SİSTEMİ (Masalar ve İstatistikler) sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+    tablesData = {}; localStorage.removeItem('barTableMap_v5');
+    salesData = { totalDrinks: 0, totalTables: 0, items: {}, categories: {} }; localStorage.removeItem('barSalesHistory_v1');
+    renderTableMap(); renderStats();
+  }
+}
+
+/* INIT */
+(function init(){
+  renderTableMap(); renderCategories(); renderItems();
+})();
+</script>
+</body>
+</html>
