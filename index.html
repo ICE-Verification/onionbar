@@ -19,8 +19,8 @@
       --good: #198754;
       --bad: #dc3545;
       --warning: #ffc107;
-      --headerH: 60px;
-      --navH: 50px;
+      --headerH: 55px;
+      --navH: 45px;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: var(--bg); color: var(--text); }
@@ -30,7 +30,7 @@
       background: var(--accent); color: white; height: var(--headerH);
       display: flex; align-items: center; justify-content: center; z-index: 100;
     }
-    header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+    header h1 { margin: 0; font-size: 16px; font-weight: 800; }
     
     .app-nav {
       position: fixed; left: 0; right: 0; top: var(--headerH);
@@ -38,7 +38,7 @@
       display: flex; z-index: 90; overflow-x: auto;
     }
     .app-nav-btn {
-      flex: 1; min-width: 110px; border: none; background: transparent; font-weight: bold; font-size: 14px;
+      flex: 1; min-width: 100px; border: none; background: transparent; font-weight: bold; font-size: 13px;
       color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; white-space: nowrap;
     }
     .app-nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: #f8f9fa; }
@@ -48,21 +48,21 @@
 
     /* ================= SINGLE TABLE MAP ================= */
     .map-container { padding: 10px; max-width: 1000px; margin: 0 auto; }
-    .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+    .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
 
     .table-card {
-      background: #fff; border: 2px solid var(--line); border-radius: 10px;
-      padding: 10px 5px; cursor: pointer; display: flex; flex-direction: column;
-      justify-content: center; align-items: center; min-height: 85px;
+      background: #fff; border: 2px solid var(--line); border-radius: 8px;
+      padding: 8px 5px; cursor: pointer; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; min-height: 75px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; position: relative;
     }
     .table-card.state-0 { background-color: #fff; opacity: 0.8;}
     .table-card.state-1 { background-color: #ffeeba; border-color: var(--warning); transform: scale(1.03); box-shadow: 0 4px 8px rgba(255,193,7,0.3);} 
     .table-card.state-2 { background-color: #d4edda; border-color: var(--good); } 
 
-    .table-name { font-size: 20px; font-weight: 900; margin-bottom: 2px; }
-    .timer { font-size: 13px; font-family: monospace; font-weight: bold; color: var(--bad); }
-    .waiting-text { font-size: 11px; font-weight: bold; margin-bottom: 2px;}
+    .table-name { font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+    .timer { font-size: 12px; font-family: monospace; font-weight: bold; color: var(--bad); }
+    .waiting-text { font-size: 10px; font-weight: bold; margin-bottom: 2px;}
     .state-1 .waiting-text { color: #d39e00; }
     .state-2 .waiting-text { color: var(--good); }
     .state-2 .timer { color: var(--good); }
@@ -70,89 +70,95 @@
     .btn { padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
     
     .view-order-btn {
-      position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.1); border: none;
-      border-radius: 4px; padding: 2px 5px; font-size: 12px; cursor: pointer; font-weight: bold;
+      position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.1); border: none;
+      border-radius: 4px; padding: 2px 5px; font-size: 11px; cursor: pointer; font-weight: bold;
     }
 
     /* ================= MODALS ================= */
     #tableModalBackdrop, #shiftSummaryBackdrop { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-    .modal-box { background: #fff; padding: 20px; border-radius: 15px; width: 92%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 15px; }
-    .modal-header h3 { margin: 0; font-size: 20px; color: var(--accent); }
+    .modal-box { background: #fff; padding: 15px; border-radius: 12px; width: 92%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 12px; }
+    .modal-header h3 { margin: 0; font-size: 18px; color: var(--accent); }
     
-    .ticket-box { background: #f8f9fa; border: 1px dashed #adb5bd; padding: 10px; border-radius: 10px; margin-bottom: 10px; min-height: 80px;}
-    .batch-header { font-size: 14px; font-weight: 900; color: var(--good); border-bottom: 1px solid var(--good); padding-bottom: 5px; margin-top: 15px; margin-bottom: 10px; }
+    .ticket-box { background: #f8f9fa; border: 1px dashed #adb5bd; padding: 10px; border-radius: 8px; margin-bottom: 10px; min-height: 60px;}
+    .batch-header { font-size: 13px; font-weight: 900; color: var(--good); border-bottom: 1px solid var(--good); padding-bottom: 5px; margin-top: 10px; margin-bottom: 8px; }
     .batch-header:first-child { margin-top: 0; }
-    .ticket-item { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; border-bottom: 1px solid var(--line); padding: 8px 0; align-items: center;}
+    .ticket-item { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px solid var(--line); padding: 6px 0; align-items: center;}
     .ticket-item:last-child { border-bottom: none; }
-    .ticket-empty { text-align: center; color: var(--muted); font-size: 14px; margin-top: 10px; }
+    .ticket-empty { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
 
     .modal-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    .btn-lg { padding: 12px; font-size: 15px; border-radius: 10px; font-weight: bold; width: 100%; border:none; cursor:pointer;}
+    .btn-lg { padding: 10px; font-size: 14px; border-radius: 8px; font-weight: bold; width: 100%; border:none; cursor:pointer;}
 
-    /* ================= BAR MENU ================= */
+    /* ================= BAR MENU (STICKY HEADER & INPUT) ================= */
     .bar-menu-container { max-width: 900px; margin: 0 auto; padding: 10px; }
     
     .order-status-bar { 
-      background: var(--accent-light); color: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; 
+      background: var(--accent-light); color: white; padding: 10px 15px; border-radius: 10px; margin-bottom: 10px; 
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-      position: -webkit-sticky; position: sticky; top: 110px; z-index: 85; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      position: -webkit-sticky; position: sticky; top: 100px; z-index: 85; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
-    .table-selector-area { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: bold;}
-    .table-selector-area select { padding: 8px; border-radius: 6px; border: none; font-size: 15px; font-weight: bold; background:#fff; color:var(--text);}
-    .btn-return { background: var(--good); color: white; padding: 10px 20px; border-radius: 8px; border:none; font-weight:bold; cursor:pointer;}
+    .table-selector-area { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold;}
+    .table-selector-area select { padding: 6px; border-radius: 6px; border: none; font-size: 14px; font-weight: bold; background:#fff; color:var(--text);}
+    .btn-return { background: var(--good); color: white; padding: 8px 15px; border-radius: 6px; border:none; font-weight:bold; cursor:pointer;}
 
-    /* QUICK ADD INPUT (KEYBOARD SHORTCUT) */
+    /* QUICK ADD INPUT (KEYBOARD SHORTCUT) WITH HINT */
     .quick-add-area {
-      margin-bottom: 15px; position: -webkit-sticky; position: sticky; top: 185px; z-index: 84;
+      margin-bottom: 10px; position: -webkit-sticky; position: sticky; top: 160px; z-index: 84;
+    }
+    .quick-input-wrapper {
+      position: relative; display: flex; align-items: center;
     }
     .quick-add-input {
-      width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 10px;
+      width: 100%; padding: 12px 15px; font-size: 15px; font-weight: bold; border-radius: 8px;
       border: 2px solid var(--accent); outline: none; background: #fff;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: left;
     }
     .quick-add-input:focus { border-color: var(--good); box-shadow: 0 0 0 3px rgba(25,135,84,0.2); }
+    .quick-hint {
+      position: absolute; right: 15px; font-size: 13px; font-weight: bold; pointer-events: none; color: var(--muted);
+    }
     
     .code-badge {
       background: #e9ecef; color: var(--accent); border: 1px solid #ced4da;
-      font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 5px;
-      font-weight: 900; box-shadow: 0 2px 0 #ced4da; display: inline-block;
+      font-size: 10px; padding: 2px 5px; border-radius: 4px; margin-right: 4px;
+      font-weight: 900; box-shadow: 0 1px 0 #ced4da; display: inline-block;
     }
 
-    .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; }
-    .cat-btn { white-space: nowrap; padding: 10px 15px; background: #e9ecef; border: none; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; }
+    .cat-btn { white-space: nowrap; padding: 8px 15px; background: #e9ecef; border: none; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; }
     .cat-btn.active { background: var(--accent); color: white; }
 
-    .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-    .item-square { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px; text-align: center; }
-    .item-name { font-weight: 800; font-size: 13px; margin-bottom: 8px; color: var(--text); }
+    .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+    .item-square { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: center; }
+    .item-name { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: var(--text); }
     
-    .variants-row { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
-    .btn-variant { background: #f8f9fa; border: 1px solid var(--line); padding: 6px; border-radius: 6px; font-size: 12px; font-weight: bold; flex: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+    .variants-row { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+    .btn-variant { background: #f8f9fa; border: 1px solid var(--line); padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; flex: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;}
 
-    .qty-controls { display: flex; align-items: center; gap: 8px; }
-    .qty-btn { background: var(--line); color: var(--text); border: none; border-radius: 4px; width: 28px; height: 28px; font-weight: bold; cursor: pointer; font-size: 15px; }
+    .qty-controls { display: flex; align-items: center; gap: 6px; }
+    .qty-btn { background: var(--line); color: var(--text); border: none; border-radius: 4px; width: 26px; height: 26px; font-weight: bold; cursor: pointer; font-size: 14px; display:flex; align-items:center; justify-content:center;}
     .qty-btn.minus { background: var(--bad); color: white; }
     .qty-btn.plus { background: var(--good); color: white; }
-    .qty-val { font-weight: 900; min-width: 15px; text-align: center; font-size: 16px; color: var(--accent); }
+    .qty-val { font-weight: 900; min-width: 15px; text-align: center; font-size: 15px; color: var(--accent); }
 
     /* ================= DASHBOARD & SHIFT SUMMARY ================= */
     .stats-container { max-width: 900px; margin: 0 auto; padding: 10px; }
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .stat-card { background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--line); text-align: center; }
-    .stat-value { font-size: 26px; font-weight: 900; color: var(--accent); margin-bottom: 5px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .stat-card { background: #fff; padding: 12px; border-radius: 10px; border: 1px solid var(--line); text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
     .stat-label { font-size: 12px; color: var(--muted); font-weight: bold; }
     
-    .stats-section { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; }
-    .stats-title { font-size: 16px; font-weight: 800; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid var(--line); padding-bottom: 10px; color: var(--accent); }
+    .stats-section { background: #fff; padding: 15px; border-radius: 10px; border: 1px solid var(--line); margin-bottom: 15px; }
+    .stats-title { font-size: 15px; font-weight: 800; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid var(--line); padding-bottom: 8px; color: var(--accent); }
     
-    .top-item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--line); font-weight: bold; font-size: 14px;}
+    .top-item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--line); font-weight: bold; font-size: 13px;}
     .top-item-row:last-child { border-bottom: none; }
     
-    .cat-stat-row { margin-bottom: 15px; }
-    .cat-stat-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
-    .progress-bar-bg { width: 100%; background: #e9ecef; border-radius: 8px; height: 10px; overflow: hidden; }
+    .cat-stat-row { margin-bottom: 12px; }
+    .cat-stat-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+    .progress-bar-bg { width: 100%; background: #e9ecef; border-radius: 8px; height: 8px; overflow: hidden; }
     .progress-bar-fill { background: var(--accent-light); height: 100%; border-radius: 8px; }
 
   </style>
@@ -167,15 +173,13 @@
   <button class="app-nav-btn" onclick="switchTab('statsView', this)" id="tabStats">📊 Raporlar</button>
 </nav>
 
-<!-- ================= 1. MAP VIEW ================= -->
 <div id="mapView" class="app-view active">
   <div class="map-container">
     <div id="allTablesGrid" class="grid-container active"></div>
-    <button class="btn" style="background:var(--bad); color:white; width:100%; margin-top:20px; padding:15px;" onclick="initiateShiftReset()">Tüm Sistemi Sıfırla (Vardiya Bitir)</button>
+    <button class="btn" style="background:var(--bad); color:white; width:100%; margin-top:15px; padding:12px;" onclick="initiateShiftReset()">Tüm Sistemi Sıfırla (Vardiya Bitir)</button>
   </div>
 </div>
 
-<!-- ================= 2. BAR MENU VIEW ================= -->
 <div id="menuView" class="app-view">
   <div class="bar-menu-container">
     <div class="order-status-bar">
@@ -188,14 +192,16 @@
       <button class="btn-return" onclick="assignOrderToTable()">Masaya Gönder</button>
     </div>
 
-    <!-- حقل الإدخال السريع (لوحة المفاتيح) -->
     <div class="quick-add-area">
-      <input type="number" class="quick-add-input" id="quickAddInput" placeholder="⌨️ İçecek Kodu girin + Enter" inputmode="numeric" autocomplete="off">
+      <div class="quick-input-wrapper">
+        <input type="number" class="quick-add-input" id="quickAddInput" placeholder="⌨️ Kodu girin + Enter" inputmode="numeric" autocomplete="off">
+        <div class="quick-hint" id="quickAddHint"></div>
+      </div>
     </div>
     
-    <div style="background:#fff; padding:10px; border-radius:8px; margin-bottom:15px; border:1px solid var(--line);">
-      <strong>Eklenecek İçecekler: </strong> 
-      <div id="tempCartList" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">Boş</div>
+    <div style="background:#fff; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--line);">
+      <strong style="font-size: 13px;">Eklenecek İçecekler: </strong> 
+      <div id="tempCartList" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">Boş</div>
     </div>
 
     <div class="cat-tabs" id="catTabs"></div>
@@ -203,7 +209,6 @@
   </div>
 </div>
 
-<!-- ================= 3. REPORTS VIEW ================= -->
 <div id="statsView" class="app-view">
   <div class="stats-container">
     <div class="stats-grid">
@@ -227,9 +232,6 @@
   </div>
 </div>
 
-<!-- ================= MODALS ================= -->
-
-<!-- Table Action Modal -->
 <div id="tableModalBackdrop">
   <div class="modal-box">
     <div class="modal-header">
@@ -239,19 +241,19 @@
     <div class="ticket-box" id="ticketBox"></div>
     <div class="modal-actions">
       <button class="btn-lg" style="background:var(--accent); color:white;" onclick="modalOpenMenu()">➕ İçecek Ekle</button>
-      <button class="btn-lg" style="background:var(--warning); color:#000;" onclick="modalMarkReady()" id="btnReady">✔️ Servise Hazır</button>
+      <button class="btn-lg" style="background:var(--warning); color:#000;" onclick="modalMarkReady()" id="btnReady">✔️ Servise Hazır (Gönderildi)</button>
+      <button class="btn-lg" style="background:var(--warning); color:#000;" onclick="modalRevertToPrep()" id="btnRevertPrep">⏳ Tekrar Hazırlanıyor'a Al</button>
       <button class="btn-lg" style="background:var(--good); color:white;" onclick="modalCheckoutTable()">💰 Hesap Al & Kapat</button>
       <button class="btn-lg" style="background:var(--bad); color:white;" onclick="modalCancelTable()">🗑️ İptal Et (Sil)</button>
     </div>
   </div>
 </div>
 
-<!-- Shift Summary Modal (Z Raporu) -->
 <div id="shiftSummaryBackdrop">
   <div class="modal-box" style="background: #f8f9fa;">
     <div class="modal-header">
-      <h3 style="color:var(--bad);">📊 Vardiya Özeti</h3>
-      <button class="btn" style="background:#dee2e6; padding:5px 10px;" onclick="document.getElementById('shiftSummaryBackdrop').style.display='none'">✖</button>
+      <h3 style="color:var(--bad); font-size:18px;">📊 Vardiya Özeti</h3>
+      <button class="btn" style="background:#dee2e6; padding:4px 8px;" onclick="document.getElementById('shiftSummaryBackdrop').style.display='none'">✖</button>
     </div>
     
     <div class="ticket-box" style="background:#fff; border: 1px solid var(--line);">
@@ -262,11 +264,10 @@
       <div class="ticket-item"><span>En Yoğun Bölüm:</span> <span id="sumPeakSection" style="color:var(--accent);">YOK</span></div>
     </div>
     
-    <h4 style="font-size:14px; margin-bottom:5px;">En Çok Satanlar:</h4>
-    <div class="ticket-box" id="sumTopItems" style="background:#fff; border: 1px solid var(--line); font-size:13px; font-weight:normal;">
-    </div>
+    <h4 style="font-size:13px; margin-bottom:5px;">En Çok Satanlar:</h4>
+    <div class="ticket-box" id="sumTopItems" style="background:#fff; border: 1px solid var(--line); font-size:12px; font-weight:normal;"></div>
 
-    <button class="btn-lg" style="background:var(--bad); color:white; margin-top:15px;" onclick="confirmResetShift()">
+    <button class="btn-lg" style="background:var(--bad); color:white; margin-top:10px;" onclick="confirmResetShift()">
       ⚠️ Sistemi Sıfırla (Yeni Vardiya Başla)
     </button>
   </div>
@@ -278,7 +279,7 @@
    ========================================================= */
 const BAR_MENU = [
   {
-    category: "Soğuk İçecekler", // أصبح التبويب الافتراضي
+    category: "Soğuk İçecekler",
     items: [
       { id:"cok", name: "Coca Cola", code: "1" },
       { id:"cok_z", name: "Coca Cola Zero", code: "2" },
@@ -327,13 +328,11 @@ const BAR_MENU = [
 ];
 
 let itemCategoryMap = {};
-let quickCodeMap = {}; // خريطة البحث السريع بالأرقام
+let quickCodeMap = {}; 
 
 BAR_MENU.forEach(cat => { 
   cat.items.forEach(it => { 
     itemCategoryMap[it.id] = cat.category; 
-    
-    // بناء قاموس الأرقام (Codes)
     if(it.variants) {
       it.variants.forEach(v => {
         quickCodeMap[v.code] = { id: it.id, name: it.name, variant: v.v };
@@ -361,7 +360,6 @@ function switchTab(viewId, btnEl) {
     if(lastOpenedTableKey && sel.querySelector(`option[value="${lastOpenedTableKey}"]`)) {
       sel.value = lastOpenedTableKey;
     }
-    // وضع المؤشر في حقل الإدخال تلقائياً
     setTimeout(() => document.getElementById('quickAddInput').focus(), 100);
   }
 }
@@ -484,7 +482,10 @@ function viewOrderModal(key, name) {
   let tableData = tablesData[key];
   let box = document.getElementById('ticketBox');
   document.getElementById('modalTableTitle').innerText = `Masa ${name} Siparişi`;
+  
+  // التحكم بظهور الأزرار حسب حالة الطاولة
   document.getElementById('btnReady').style.display = (tableData.state === 1) ? 'block' : 'none';
+  document.getElementById('btnRevertPrep').style.display = (tableData.state === 2) ? 'block' : 'none';
 
   if (!tableData.batches || tableData.batches.length === 0) {
     box.innerHTML = `<div class="ticket-empty">Henüz içecek eklenmedi.</div>`;
@@ -548,6 +549,13 @@ function modalMarkReady() {
   renderTableMap(); closeOrderModal();
 }
 
+function modalRevertToPrep() {
+  let data = tablesData[selectedTableKeyModal];
+  data.state = 1; // إعادتها لحالة قيد التحضير
+  renderTableMap(); 
+  closeOrderModal();
+}
+
 function modalCheckoutTable() {
   if(confirm("Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?")) {
     let data = tablesData[selectedTableKeyModal];
@@ -602,7 +610,7 @@ setInterval(updateTimers, 1000);
 /* =========================================================
    3. BAR MENU LOGIC (AUTO-SORTING & KEYBOARD INPUT)
    ========================================================= */
-let activeCatIndex = 0; // 0 هو الآن "المشروبات الباردة"
+let activeCatIndex = 0; 
 let tempCart = {}; 
 
 function renderCategories() {
@@ -642,7 +650,22 @@ function renderItems() {
   });
 }
 
-// مستمع لوحة المفاتيح لإضافة الطلب السريع
+// إظهار تلميح أثناء إدخال الرقم
+document.getElementById('quickAddInput').addEventListener('input', function(e) {
+  let code = this.value.trim();
+  let hintEl = document.getElementById('quickAddHint');
+  if(code && quickCodeMap[code]) {
+      let item = quickCodeMap[code];
+      hintEl.innerText = item.name + (item.variant ? ` (${item.variant})` : "");
+      hintEl.style.color = "var(--good)";
+  } else if(code) {
+      hintEl.innerText = "Hatalı Kod!";
+      hintEl.style.color = "var(--bad)";
+  } else {
+      hintEl.innerText = "";
+  }
+});
+
 document.getElementById('quickAddInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -651,8 +674,8 @@ document.getElementById('quickAddInput').addEventListener('keypress', function(e
       let item = quickCodeMap[code];
       addTempItem(item.id, item.name, item.variant, code);
       this.value = ''; 
+      document.getElementById('quickAddHint').innerText = ''; // تفريغ التلميح بعد الإضافة
     } else {
-      // إشارة حمراء إذا كان الكود غير صحيح
       this.style.borderColor = 'var(--bad)';
       setTimeout(() => this.style.borderColor = 'var(--accent)', 300);
     }
@@ -677,14 +700,14 @@ function changeTempQty(key, amount) {
 function updateTempCartUI() {
   let keys = Object.keys(tempCart);
   let container = document.getElementById("tempCartList");
-  if (keys.length === 0) { container.innerHTML = "<span style='color:var(--muted); font-size:14px;'>Boş</span>"; return; }
+  if (keys.length === 0) { container.innerHTML = "<span style='color:var(--muted); font-size:13px;'>Boş</span>"; return; }
   
   let html = "";
   keys.forEach(k => {
     let item = tempCart[k];
     html += `
-      <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid var(--line);">
-        <span style="font-size:15px; font-weight:bold;">${item.name}</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:8px 10px; border-radius:6px; border:1px solid var(--line);">
+        <span style="font-size:14px; font-weight:bold;">${item.name}</span>
         <div class="qty-controls">
           <button class="qty-btn minus" onclick="changeTempQty('${k}', -1)">-</button>
           <span class="qty-val">${item.qty}</span>
