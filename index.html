@@ -49,7 +49,6 @@
     .app-view { display: none; padding-top: calc(var(--headerH) + var(--navH) + 10px); padding-bottom: 30px;}
     .app-view.active { display: block; }
 
-    /* ================= SINGLE TABLE MAP ================= */
     .map-container { padding: 10px; max-width: 1000px; margin: 0 auto; }
     .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
 
@@ -77,7 +76,6 @@
       border-radius: 4px; padding: 2px 5px; font-size: 11px; cursor: pointer; font-weight: bold;
     }
 
-    /* ================= MODALS ================= */
     #tableModalBackdrop, #shiftSummaryBackdrop { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
     .modal-box { background: #fff; padding: 15px; border-radius: 12px; width: 92%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 12px; }
@@ -93,7 +91,6 @@
     .modal-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .btn-lg { padding: 10px; font-size: 14px; border-radius: 8px; font-weight: bold; width: 100%; border:none; cursor:pointer;}
 
-    /* ================= BAR MENU ================= */
     .bar-menu-container { max-width: 900px; margin: 0 auto; padding: 10px; }
     
     .order-status-bar { 
@@ -106,7 +103,6 @@
     .table-selector-area select { padding: 6px; border-radius: 6px; border: none; font-size: 14px; font-weight: bold; background:#fff; color:var(--text);}
     .btn-return { background: var(--good); color: white; padding: 8px 15px; border-radius: 6px; border:none; font-weight:bold; cursor:pointer;}
 
-    /* QUICK ADD & CAMERA SECTION */
     .quick-add-area {
       margin-bottom: 10px; position: -webkit-sticky; position: sticky; top: 160px; z-index: 84;
       display: flex; gap: 8px; align-items: center;
@@ -154,7 +150,6 @@
     .qty-btn.plus { background: var(--good); color: white; }
     .qty-val { font-weight: 900; min-width: 15px; text-align: center; font-size: 15px; color: var(--accent); }
 
-    /* ================= DASHBOARD & SHIFT SUMMARY ================= */
     .stats-container { max-width: 900px; margin: 0 auto; padding: 10px; }
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     .stat-card { background: #fff; padding: 12px; border-radius: 10px; border: 1px solid var(--line); text-align: center; }
@@ -163,7 +158,6 @@
     
     .stats-section { background: #fff; padding: 15px; border-radius: 10px; border: 1px solid var(--line); margin-bottom: 15px; }
     .stats-title { font-size: 15px; font-weight: 800; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid var(--line); padding-bottom: 8px; color: var(--accent); }
-    
     .top-item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--line); font-weight: bold; font-size: 13px;}
     .top-item-row:last-child { border-bottom: none; }
     
@@ -171,7 +165,6 @@
     .cat-stat-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
     .progress-bar-bg { width: 100%; background: #e9ecef; border-radius: 8px; height: 8px; overflow: hidden; }
     .progress-bar-fill { background: var(--accent-light); height: 100%; border-radius: 8px; }
-
   </style>
 </head>
 <body>
@@ -270,7 +263,6 @@
       <h3 style="color:var(--bad); font-size:18px;">📊 Vardiya Özeti</h3>
       <button class="btn" style="background:#dee2e6; padding:4px 8px;" onclick="document.getElementById('shiftSummaryBackdrop').style.display='none'">✖</button>
     </div>
-    
     <div class="ticket-box" style="background:#fff; border: 1px solid var(--line);">
       <div class="ticket-item"><span>Toplam İçecek:</span> <span id="sumDrinks" style="color:var(--accent);">0</span></div>
       <div class="ticket-item"><span>Hizmet Verilen Masa:</span> <span id="sumTables" style="color:var(--accent);">0</span></div>
@@ -278,96 +270,103 @@
       <div class="ticket-item"><span>En Yoğun Saat:</span> <span id="sumPeakHour" style="color:var(--warning);">YOK</span></div>
       <div class="ticket-item"><span>En Yoğun Bölüm:</span> <span id="sumPeakSection" style="color:var(--accent);">YOK</span></div>
     </div>
-    
     <h4 style="font-size:13px; margin-bottom:5px;">En Çok Satanlar:</h4>
     <div class="ticket-box" id="sumTopItems" style="background:#fff; border: 1px solid var(--line); font-size:12px; font-weight:normal;"></div>
-
-    <button class="btn-lg" style="background:var(--bad); color:white; margin-top:10px;" onclick="confirmResetShift()">
-      ⚠️ Sistemi Sıfırla (Yeni Vardiya Başla)
-    </button>
+    <button class="btn-lg" style="background:var(--bad); color:white; margin-top:10px;" onclick="confirmResetShift()">⚠️ Sistemi Sıfırla (Yeni Vardiya Başla)</button>
   </div>
 </div>
 
 <script>
 /* =========================================================
-   MENU DATA & CATEGORY MAPPING
+   MENU DATA & CATEGORY MAPPING (EXACTLY MATCHING NARPOS)
    ========================================================= */
 const BAR_MENU = [
   {
     category: "Soğuk İçecekler",
     items: [
-      { id:"cok", name: "Coca Cola", code: "1" },
-      { id:"cok_z", name: "Coca Cola Zero", code: "2" },
-      { id:"fan", name: "Fanta", code: "3" },
-      { id:"spr", name: "Sprite", code: "4" },
-      { id:"fuse", name: "Fuse Tea", variants: [{v:"Şeftali", code:"5"}, {v:"Limon", code:"6"}] },
-      { id:"cappy", name: "Cappy", variants: [{v:"Vişne", code:"7"}, {v:"Karışık", code:"8"}] },
-      { id:"su", name: "Su", code: "9" },
-      { id:"ayran", name: "Ayran", code: "10" },
-      { id:"lim", name: "Limonata", code: "11" },
-      { id:"gazoz", name: "Uludağ Gazoz", code: "12" },
-      { id:"frutti", name: "Frutti Extra", code: "13" },
-      { id:"gazoz_port", name: "Gazoz Portakal", code: "14" },
-      { id:"sod", name: "Soda", code: "15" },
-      { id:"chu", name: "Churchill", code: "16" }
+      { id:"cok", name: "COCA COLA", code: "1" },
+      { id:"fan", name: "FANTA", code: "3" },
+      { id:"spr", name: "SPRİTE", code: "4" },
+      { id:"fuse", name: "FUSE TEA", variants: [{v:"Şeftali", code:"5"}, {v:"Limon", code:"6"}] },
+      { id:"cappy", name: "CAPPY", variants: [{v:"Vişne", code:"7"}, {v:"Karışık", code:"8"}] },
+      { id:"su", name: "SU", code: "9" },
+      { id:"ayran", name: "AYRAN", code: "10" },
+      { id:"lim", name: "LİMONATA", code: "11" },
+      { id:"gazoz", name: "ULUDAĞ GAZOZ", code: "12" },
+      { id:"frutti", name: "FRUTTİ EXTRA", code: "13" },
+      { id:"sod", name: "SODA", code: "15" },
+      { id:"chu", name: "CHURCHİLL", code: "16" }
     ]
   },
   {
     category: "Sıcak İçecekler",
     items: [
-      { id:"esp", name: "Espresso", variants: [{v:"Tek", code:"20"}, {v:"Double", code:"21"}] },
-      { id:"ame", name: "Americano", code: "22" },
-      { id:"cap", name: "Cappuccino", code: "23" },
-      { id:"lat_mac", name: "Latte Macchiato", code: "24" },
-      { id:"lat", name: "Caffe Latte", code: "25" },
-      { id:"moc", name: "Caffe Mocha", code: "26" },
-      { id:"kar", name: "Karamel Caffe Latte", code: "27" },
-      { id:"flt", name: "Flat White", code: "28" },
-      { id:"esp_mac", name: "Espresso Macchiato", code: "29" },
-      { id:"trk", name: "Türk Kahvesi", variants: [{v:"Tek", code:"30"}, {v:"Double", code:"31"}] },
-      { id:"fil", name: "Filtre Kahve", code: "32" },
-      { id:"sut", name: "Süt 100 ml", code: "33" },
-      { id:"cay", name: "Çay", code: "34" },
-      { id:"fincan_cay", name: "Fincan Çay", code: "35" }
+      { id:"esp", name: "ESPRESSO", variants: [{v:"Tek", code:"20"}, {v:"Double", code:"21"}] },
+      { id:"ame", name: "AMERİCANO", code: "22" },
+      { id:"cap", name: "CAPPUCİON", code: "23" }, /* TYPO in POS */
+      { id:"lat_mac", name: "LATTE MACCHİATO", code: "24" },
+      { id:"lat", name: "CAFE LATTE", code: "25" },
+      { id:"moc", name: "CAFFE MOCHA", code: "26" },
+      { id:"kar", name: "KARAMEL CAFFE LATE", code: "27" }, /* TYPO in POS */
+      { id:"flt", name: "FLAT WHİTE", code: "28" },
+      { id:"esp_mac", name: "ESPRESSO MACCHİATO", code: "29" },
+      { id:"trk", name: "TÜRK KAHVESİ", variants: [{v:"Tek", code:"30"}, {v:"Double", code:"31"}] },
+      { id:"fil", name: "FİLTRE KAHVE", code: "32" },
+      { id:"sut", name: "SÜT 100 ML", code: "33" },
+      { id:"cay", name: "ÇAY", code: "34" },
+      { id:"fincan_cay", name: "FİNCAN ÇAY", code: "35" }
     ]
   },
   {
     category: "Soğuk Kahveler",
     items: [
-      { id:"i_ame", name: "Ice Americano", code: "40" },
-      { id:"i_lat", name: "Ice Latte", code: "41" },
-      { id:"i_kar", name: "Ice Karamel Latte", code: "42" },
-      { id:"i_moc", name: "Ice Caffe Mocha", code: "43" }
+      { id:"i_ame", name: "SOĞUK AMERİCANO", code: "40" },
+      { id:"i_lat", name: "SOĞUK LATTE", code: "41" },
+      { id:"i_kar", name: "SOĞUK KARAMEL LATTE", code: "42" },
+      { id:"i_moc", name: "SOĞUK CAFFE MOCHA", code: "43" }
     ]
   }
 ];
 
 let itemCategoryMap = {};
 let quickCodeMap = {}; 
-let searchIndex = []; // مصفوفة لتسهيل البحث بالكلمات
+let searchIndex = []; 
+
+// دالة العبقرية: توحيد الحروف وإزالة الفراغات لتطابق دقيق
+function normalizeForOCR(str) {
+    if(!str) return "";
+    return str.toLocaleLowerCase('tr-TR')
+              .replace(/ğ/g, 'g')
+              .replace(/ü/g, 'u')
+              .replace(/ş/g, 's')
+              .replace(/ı/g, 'i')
+              .replace(/i̇/g, 'i')
+              .replace(/ö/g, 'o')
+              .replace(/ç/g, 'c')
+              .replace(/[^a-z0-9]/g, ''); // إزالة أي مسافات أو رموز
+}
 
 BAR_MENU.forEach(cat => { 
   cat.items.forEach(it => { 
     itemCategoryMap[it.id] = cat.category; 
+    
     if(it.variants) {
       it.variants.forEach(v => { 
           quickCodeMap[v.code] = { id: it.id, name: it.name, variant: v.v }; 
-          // حفظ الاسم مع الخيار (مثل: espresso double) بأحرف صغيرة لتسهيل البحث
-          searchIndex.push({ id: it.id, name: it.name, variant: v.v, code: v.code, searchStr: (it.name + " " + v.v).toLowerCase() });
+          let exactStr = normalizeForOCR(it.name);
+          searchIndex.push({ id: it.id, name: it.name, variant: v.v, code: v.code, searchStr: exactStr });
       });
     } else {
       quickCodeMap[it.code] = { id: it.id, name: it.name, variant: "" };
-      searchIndex.push({ id: it.id, name: it.name, variant: "", code: it.code, searchStr: it.name.toLowerCase() });
+      let exactStr = normalizeForOCR(it.name);
+      searchIndex.push({ id: it.id, name: it.name, variant: "", code: it.code, searchStr: exactStr });
     }
   }); 
 });
 
-// ترتيب مصفوفة البحث لتبحث عن الكلمات الطويلة أولاً لمنع التداخل (مثل Ice Latte قبل Latte)
+// ترتيب الكلمات الطويلة أولاً لتجنب التداخل
 searchIndex.sort((a, b) => b.searchStr.length - a.searchStr.length);
 
-/* =========================================================
-   1. GLOBAL STATE & NAVIGATION
-   ========================================================= */
 let lastOpenedTableKey = null; 
 
 function switchTab(viewId, btnEl) {
@@ -384,9 +383,6 @@ function switchTab(viewId, btnEl) {
   }
 }
 
-/* =========================================================
-   2. TABLE MAP LOGIC
-   ========================================================= */
 let tablesData = JSON.parse(localStorage.getItem('barTableMap_v6')) || {};
 let salesData = JSON.parse(localStorage.getItem('barSalesHistory_v2')) || { 
   totalDrinks: 0, totalTables: 0, items: {}, baseItems: {}, categories: {},
@@ -465,7 +461,6 @@ function renderTableMap() {
   });
 
   if (currentSelection && selector.querySelector(`option[value="${currentSelection}"]`)) selector.value = currentSelection;
-  
   localStorage.setItem('barTableMap_v6', JSON.stringify(tablesData));
   updateTimers(); 
 }
@@ -475,31 +470,23 @@ function handleTableClick(key, name) {
   lastOpenedTableKey = key; 
   
   if (data.state === 0) {
-    data.state = 1; 
-    data.startTime = Date.now();
-  } 
-  else if (data.state === 1) {
+    data.state = 1; data.startTime = Date.now();
+  } else if (data.state === 1) {
     let diff = Math.floor((Date.now() - data.startTime) / 1000);
-    salesData.totalPrepSeconds += diff;
-    salesData.prepCount += 1;
+    salesData.totalPrepSeconds += diff; salesData.prepCount += 1;
     localStorage.setItem('barSalesHistory_v2', JSON.stringify(salesData));
     data.state = 2; 
-  } 
-  else if (data.state === 2) {
-    viewOrderModal(key, data.name);
-    return; 
+  } else if (data.state === 2) {
+    viewOrderModal(key, data.name); return; 
   }
   renderTableMap();
 }
 
-// ================= MODAL FUNCTIONS =================
 let selectedTableKeyModal = null;
 
 function viewOrderModal(key, name) {
-  selectedTableKeyModal = key;
-  lastOpenedTableKey = key;
-  let tableData = tablesData[key];
-  let box = document.getElementById('ticketBox');
+  selectedTableKeyModal = key; lastOpenedTableKey = key;
+  let tableData = tablesData[key]; let box = document.getElementById('ticketBox');
   document.getElementById('modalTableTitle').innerText = `Masa ${name} Siparişi`;
   
   document.getElementById('btnReady').style.display = (tableData.state === 1) ? 'block' : 'none';
@@ -512,7 +499,7 @@ function viewOrderModal(key, name) {
     tableData.batches.forEach((batch, bIndex) => {
       html += `<div class="batch-header">Sipariş ${bIndex + 1} <small style="color:#6c757d; float:right;">${batch.time}</small></div>`;
       batch.items.forEach((item, iIndex) => {
-        html += `<div class="ticket-item"><span>${item.name}</span><div class="qty-controls">
+        html += `<div class="ticket-item"><span style="text-transform: capitalize;">${item.name.toLowerCase()}</span><div class="qty-controls">
                    <button class="qty-btn minus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, -1)">-</button>
                    <span class="qty-val">${item.qty}</span>
                    <button class="qty-btn plus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, 1)">+</button>
@@ -527,17 +514,11 @@ function viewOrderModal(key, name) {
 function closeOrderModal() { document.getElementById('tableModalBackdrop').style.display = 'none'; selectedTableKeyModal = null;}
 
 function editBatchItem(tableKey, batchIndex, itemIndex, amount) {
-  let data = tablesData[tableKey];
-  let batch = data.batches[batchIndex];
-  let item = batch.items[itemIndex];
-
+  let data = tablesData[tableKey]; let batch = data.batches[batchIndex]; let item = batch.items[itemIndex];
   item.qty += amount;
   if (item.qty <= 0) batch.items.splice(itemIndex, 1); 
   if (batch.items.length === 0) data.batches.splice(batchIndex, 1); 
-
-  if (data.batches.length === 0) {
-    data.state = 0; data.startTime = null; closeOrderModal();
-  }
+  if (data.batches.length === 0) { data.state = 0; data.startTime = null; closeOrderModal(); }
 
   localStorage.setItem('barTableMap_v6', JSON.stringify(tablesData));
   if (document.getElementById('tableModalBackdrop').style.display === 'flex') viewOrderModal(tableKey, data.name); 
@@ -548,29 +529,24 @@ function modalOpenMenu() {
   let data = tablesData[selectedTableKeyModal];
   if(data.state === 0 || data.state === 2) { data.startTime = Date.now(); data.state = 1; }
   document.getElementById('menuTableSelect').value = selectedTableKeyModal;
-  closeOrderModal();
-  switchTab('menuView', document.getElementById('tabMenu'));
+  closeOrderModal(); switchTab('menuView', document.getElementById('tabMenu'));
 }
 
 function modalMarkReady() {
   let data = tablesData[selectedTableKeyModal];
   if(data.startTime && data.state === 1) {
       let diff = Math.floor((Date.now() - data.startTime) / 1000);
-      salesData.totalPrepSeconds += diff;
-      salesData.prepCount += 1;
+      salesData.totalPrepSeconds += diff; salesData.prepCount += 1;
       localStorage.setItem('barSalesHistory_v2', JSON.stringify(salesData));
   }
   data.state = 2; renderTableMap(); closeOrderModal();
 }
 
-function modalRevertToPrep() {
-  tablesData[selectedTableKeyModal].state = 1; renderTableMap(); closeOrderModal();
-}
+function modalRevertToPrep() { tablesData[selectedTableKeyModal].state = 1; renderTableMap(); closeOrderModal(); }
 
 function modalCheckoutTable() {
   let data = tablesData[selectedTableKeyModal];
-  let isStaff = (data.section === 'staff');
-  let confirmMsg = isStaff ? "Personel tüketimini kaydetmek istiyor musunuz?" : "Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?";
+  let confirmMsg = (data.section === 'staff') ? "Personel tüketimini kaydetmek istiyor musunuz?" : "Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?";
   
   if(confirm(confirmMsg)) {
     if(data.batches && data.batches.length > 0) {
@@ -584,7 +560,6 @@ function modalCheckoutTable() {
           salesData.items[item.name] = (salesData.items[item.name] || 0) + item.qty;
           salesData.baseItems[item.baseId] = (salesData.baseItems[item.baseId] || 0) + item.qty;
           salesData.hourlySales[hour] = (salesData.hourlySales[hour] || 0) + item.qty;
-          
           let cat = itemCategoryMap[item.baseId] || "Diğer";
           salesData.categories[cat] = (salesData.categories[cat] || 0) + item.qty;
         });
@@ -620,7 +595,7 @@ function updateTimers() {
 setInterval(updateTimers, 1000);
 
 /* =========================================================
-   3. BAR MENU LOGIC & OCR INTELLIGENCE
+   3. BAR MENU LOGIC & OCR INTELLIGENCE (COMPRESSED)
    ========================================================= */
 let activeCatIndex = 0; 
 let tempCart = {}; 
@@ -643,7 +618,8 @@ function renderItems() {
 
   items.forEach(it => {
     let square = document.createElement("div"); square.className = "item-square";
-    let html = `<div class="item-name">${it.name}</div>`;
+    // عرض الأسماء بأحرف صغيرة في المنيو لجمالية الواجهة
+    let html = `<div class="item-name" style="text-transform: capitalize;">${it.name.toLowerCase()}</div>`;
     if (it.variants) {
       html += `<div class="variants-row">`;
       it.variants.forEach(v => { html += `<button class="btn-variant" onclick="addTempItem('${it.id}', '${it.name}', '${v.v}', '${v.code}')"><span class="code-badge">${v.code}</span> ${v.v}</button>`; });
@@ -659,9 +635,8 @@ document.getElementById('quickAddInput').addEventListener('input', function() {
   let code = this.value.trim(); let hintEl = document.getElementById('quickAddHint');
   if(code && quickCodeMap[code]) {
       let item = quickCodeMap[code]; hintEl.innerText = item.name + (item.variant ? ` (${item.variant})` : ""); hintEl.style.color = "var(--good)";
-  } else if(code) {
-      hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)";
-  } else { hintEl.innerText = ""; }
+  } else if(code) { hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)"; } 
+  else { hintEl.innerText = ""; }
 });
 
 document.getElementById('quickAddInput').addEventListener('keypress', function(e) {
@@ -676,7 +651,29 @@ document.getElementById('quickAddInput').addEventListener('keypress', function(e
   }
 });
 
-// 📷 قراءة النص التركي من الصورة باستخدام Tesseract
+// حل مشكلة تعليق الكاميرا
+document.getElementById('cameraFileInput').addEventListener('click', function() { this.value = null; });
+
+function compressImage(file, callback) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let img = new Image();
+        img.onload = function() {
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            let MAX_WIDTH = 800; let ratio = 1;
+            if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
+            canvas.width = img.width * ratio; canvas.height = img.height * ratio;
+            ctx.filter = 'grayscale(100%) contrast(1.5)';
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            callback(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+// 📷 قراءة النص المعتمدة على المطابقة الدقيقة
 document.getElementById('cameraFileInput').addEventListener('change', function(e) {
   let file = e.target.files[0];
   if (!file) return;
@@ -684,34 +681,30 @@ document.getElementById('cameraFileInput').addEventListener('change', function(e
   let btnLabel = document.getElementById('cameraBtnLabel');
   btnLabel.innerHTML = "⏳"; 
 
-  // نستخدم لغة 'tur' للقراءة الصحيحة للأسماء التركية
-  Tesseract.recognize(file, 'tur', { logger: m => console.log(m) }).then(({ data: { text } }) => {
-    let lowerText = text.toLowerCase();
-    let addedCount = 0;
-    
-    // تمرير الكلمات المفتاحية للبحث داخل النص المقروء
-    searchIndex.forEach(item => {
-       if(lowerText.includes(item.searchStr)) {
-           // إذا وجد تطابقاً لاسم المشروب، يضيفه
-           addTempItem(item.id, item.name, item.variant, item.code);
-           addedCount++;
-           // مسح الكلمة لتجنب تكرار قراءتها (مثال: حتى لا يقرأ Latte مرتين إذا كانت Ice Latte)
-           lowerText = lowerText.replace(item.searchStr, "");
-       }
-    });
-    
-    if(addedCount > 0) {
-      alert(`🎉 Adisyondan ${addedCount} içecek algılandı ve sepete eklendi!`);
-    } else {
-      alert("Adisyonda eşleşen içecek bulunamadı. Lütfen yazının net olduğuna emin olun.");
-    }
-    
-    btnLabel.innerHTML = "📷";
-    document.getElementById('cameraFileInput').value = ""; 
-  }).catch(err => {
-    console.error(err);
-    alert("Fotoğraf okunurken hata oluştu.");
-    btnLabel.innerHTML = "📷";
+  compressImage(file, function(compressedImageData) {
+      Tesseract.recognize(compressedImageData, 'tur', { logger: m => console.log(m) }).then(({ data: { text } }) => {
+        let normalizedText = normalizeForOCR(text);
+        let addedCount = 0;
+        
+        searchIndex.forEach(item => {
+           let matchIndex = normalizedText.indexOf(item.searchStr);
+           if(matchIndex !== -1) {
+               // البحث عن الرقم المضروب (مثال: 2x أو 3x) في النص المجرد
+               let qty = 1;
+               let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
+               let qtyMatch = preText.match(/(\d+)x/);
+               if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
+               
+               for(let i=0; i<qty; i++){ addTempItem(item.id, item.name, item.variant, item.code); }
+               addedCount += qty;
+               normalizedText = normalizedText.replace(item.searchStr, "");
+           }
+        });
+        
+        if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı ve sepete eklendi!`); } 
+        else { alert("Adisyonda eşleşen içecek bulunamadı. Lütfen yazının net olduğuna emin olun."); }
+        btnLabel.innerHTML = "📷";
+      }).catch(err => { alert("Fotoğraf okunurken hata oluştu."); btnLabel.innerHTML = "📷"; });
   });
 });
 
@@ -740,7 +733,7 @@ function updateTempCartUI() {
     let item = tempCart[k];
     html += `
       <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:8px 10px; border-radius:6px; border:1px solid var(--line);">
-        <span style="font-size:14px; font-weight:bold;">${item.name}</span>
+        <span style="font-size:14px; font-weight:bold; text-transform:capitalize;">${item.name.toLowerCase()}</span>
         <div class="qty-controls">
           <button class="qty-btn minus" onclick="changeTempQty('${k}', -1)">-</button>
           <span class="qty-val">${item.qty}</span>
@@ -790,7 +783,7 @@ function renderStats() {
   
   let topHtml = "";
   if(top5.length === 0) topHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
-  top5.forEach(it => { topHtml += `<div class="top-item-row"><span>${it.name}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`; });
+  top5.forEach(it => { topHtml += `<div class="top-item-row"><span style="text-transform:capitalize;">${it.name.toLowerCase()}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`; });
   document.getElementById('topItemsList').innerHTML = topHtml;
 
   let catHtml = ""; let totalD = salesData.totalDrinks || 1; 
@@ -824,7 +817,7 @@ function initiateShiftReset() {
 
   let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] })).sort((a, b) => b.qty - a.qty).slice(0,5);
   let topHtml = "";
-  itemsArr.forEach(it => { topHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>${it.name}</span><strong>${it.qty}</strong></div>`; });
+  itemsArr.forEach(it => { topHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="text-transform:capitalize;">${it.name.toLowerCase()}</span><strong>${it.qty}</strong></div>`; });
   document.getElementById('sumTopItems').innerHTML = topHtml || "Kayıt yok.";
 
   document.getElementById('shiftSummaryBackdrop').style.display = 'flex';
