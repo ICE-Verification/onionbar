@@ -7,8 +7,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Akıllı Bar Sistemi</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
   <style>
     :root {
@@ -154,7 +152,6 @@
     .progress-bar-bg { width: 100%; background: #e9ecef; border-radius: 8px; height: 8px; overflow: hidden; }
     .progress-bar-fill { background: var(--accent-light); height: 100%; border-radius: 8px; }
 
-    /* STYLES FOR INVENTORY MANAGEMENT */
     .stok-list { display: flex; flex-direction: column; gap: 6px; }
     .stok-row { display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid var(--line); font-weight: bold; align-items: center;}
     .stok-row.kritik { background: #f8d7da; border-color: #f5c2c7; color: var(--bad); }
@@ -176,6 +173,7 @@
   <button class="app-nav-btn" onclick="switchTab('inventoryView', this)" id="tabInventory">📦 Stok ve Zayi</button>
 </nav>
 
+<!-- MAP VIEW -->
 <div id="mapView" class="app-view active">
   <div class="map-container">
     <div id="allTablesGrid" class="grid-container active"></div>
@@ -183,6 +181,7 @@
   </div>
 </div>
 
+<!-- BAR MENU VIEW -->
 <div id="menuView" class="app-view">
   <div class="bar-menu-container">
     <div class="order-status-bar">
@@ -213,6 +212,7 @@
   </div>
 </div>
 
+<!-- REPORTS VIEW -->
 <div id="statsView" class="app-view">
   <div class="stats-container">
     <div class="stats-grid">
@@ -230,14 +230,13 @@
   </div>
 </div>
 
+<!-- INVENTORY VIEW -->
 <div id="inventoryView" class="app-view">
   <div class="stats-container">
-    
     <div class="stats-section">
       <h3 class="stats-title">📦 Mevcut Stok Durumu</h3>
       <div class="stok-list" id="inventoryStatusList"></div>
     </div>
-
     <div class="stats-section">
       <h3 class="stats-title">➕ Stok Girişi / Malzeme Ekle</h3>
       <div class="stok-action-form">
@@ -246,7 +245,6 @@
         <button class="btn" style="background:var(--good); color:white; flex:1;" onclick="submitStockAction('add')">Ekle</button>
       </div>
     </div>
-
     <div class="stats-section">
       <h3 class="stats-title">🗑️ Zayi / Fire / Defolu Ürün Girişi</h3>
       <div class="stok-action-form">
@@ -255,10 +253,10 @@
         <button class="btn" style="background:var(--bad); color:white; flex:1;" onclick="submitStockAction('zayi')">Zayi Yaz</button>
       </div>
     </div>
-
   </div>
 </div>
 
+<!-- Table Action Modal -->
 <div id="tableModalBackdrop">
   <div class="modal-box">
     <div class="modal-header">
@@ -276,6 +274,7 @@
   </div>
 </div>
 
+<!-- Shift Summary Modal -->
 <div id="shiftSummaryBackdrop">
   <div class="modal-box" style="background: #f8f9fa;">
     <div class="modal-header">
@@ -296,9 +295,12 @@
   </div>
 </div>
 
+<!-- تحميل مكتبة الذكاء الاصطناعي في أسفل الصفحة لعدم إبطاء الواجهة -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
 <script>
 /* =========================================================
-   MENU DATA & CATEGORY MAPPING (EXACTLY MATCHING NARPOS)
+   MENU DATA & CATEGORY MAPPING
    ========================================================= */
 const BAR_MENU = [
   {
@@ -348,7 +350,6 @@ const BAR_MENU = [
   }
 ];
 
-// تعريف تفاصيل الجرد الأساسية والحد الحرج للتنبيهات
 const INVENTORY_ITEMS = {
   kahve: { name: "Kahve Çekirdeği (gr)", unit: "gr", limit: 300 },
   sut: { name: "Süt (ml)", unit: "ml", limit: 1000 },
@@ -378,9 +379,6 @@ function normalizeForOCR(str) {
 BAR_MENU.forEach(cat => { 
   cat.items.forEach(it => { 
     itemCategoryMap[it.id] = cat.category; 
-    let posAliases = [];
-    if(it.name.toLowerCase().includes("soğuk")) { posAliases.push(it.name.toLowerCase().replace("soğuk", "soguk")); }
-
     if(it.variants) {
       it.variants.forEach(v => { 
           quickCodeMap[v.code] = { id: it.id, name: it.name, variant: v.v }; 
@@ -395,17 +393,26 @@ BAR_MENU.forEach(cat => {
 searchIndex.sort((a, b) => b.searchStr.length - a.searchStr.length);
 
 /* =========================================================
-   LOCAL STORAGE DATA LOADING
+   SAFE LOCAL STORAGE LOADING (يمنع أي أعطال بسبب الذاكرة القديمة)
    ========================================================= */
-let tablesData = JSON.parse(localStorage.getItem('barTableMap_v7')) || {};
-let salesData = JSON.parse(localStorage.getItem('barSalesHistory_v3')) || { 
+function getSafeData(key, defaultData) {
+    try {
+        let data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : defaultData;
+    } catch(e) {
+        return defaultData;
+    }
+}
+
+let tablesData = getSafeData('barTableMap_v7', {});
+let salesData = getSafeData('barSalesHistory_v3', { 
   totalDrinks: 0, totalTables: 0, staffTables: 0, items: {}, baseItems: {}, categories: {},
   hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 }
-};
-let stockData = JSON.parse(localStorage.getItem('barInventory_v2')) || {
+});
+let stockData = getSafeData('barInventory_v2', {
   kahve: 2000, sut: 10000, bardak: 150, cok: 24, fan: 24, spr: 24, fuse_seftali: 24, fuse_limon: 24,
   cappy_visne: 24, cappy_karisik: 24, su: 60, ayran: 30, lim: 24, gazoz: 24, frutti: 24, sod: 30
-};
+});
 
 let lastOpenedTableKey = null;
 
@@ -425,24 +432,17 @@ function switchTab(viewId, btnEl) {
 }
 
 /* =========================================================
-   TABLE MAP LIFECYCLE
+   TABLE MAP
    ========================================================= */
 function initDataIfMissing() {
-  const sections = [
-    { id: 'inside', prefix: '', count: 10 },
-    { id: 'outside', prefix: 'B', count: 6 },
-    { id: 'upstairs', prefix: 'A', count: 9 },
-    { id: 'staff', prefix: 'P', count: 2 }
-  ];
+  const sections = [ { id: 'inside', prefix: '', count: 10 }, { id: 'outside', prefix: 'B', count: 6 }, { id: 'upstairs', prefix: 'A', count: 9 }, { id: 'staff', prefix: 'P', count: 2 } ];
   let isMissing = Object.keys(tablesData).length === 0;
   sections.forEach(sec => {
     for (let i = 1; i <= sec.count; i++) {
       for (let part = 1; part <= 2; part++) {
         let key = `${sec.id}-${i}-${part}`;
         let name = (part === 1) ? `${sec.prefix}${i}` : `${sec.prefix}${i}/2`;
-        if (isMissing || !tablesData[key]) {
-          tablesData[key] = { state: 0, startTime: null, batches: [], name: name, section: sec.id, idNum: i, partNum: part };
-        }
+        if (isMissing || !tablesData[key]) { tablesData[key] = { state: 0, startTime: null, batches: [], name: name, section: sec.id, idNum: i, partNum: part }; }
       }
     }
   });
@@ -450,89 +450,56 @@ function initDataIfMissing() {
 
 function renderTableMap() {
   initDataIfMissing();
-  let grid = document.getElementById('allTablesGrid');
-  let selector = document.getElementById('menuTableSelect');
-  grid.innerHTML = '';
-  
-  let currentSelection = selector.value || lastOpenedTableKey;
+  let grid = document.getElementById('allTablesGrid'); let selector = document.getElementById('menuTableSelect');
+  grid.innerHTML = ''; let currentSelection = selector.value || lastOpenedTableKey;
   selector.innerHTML = '<option value="">Seçiniz...</option>';
 
   let tablesArray = Object.keys(tablesData).map(k => { return { key: k, ...tablesData[k] }; });
-
   tablesArray.sort((a, b) => {
     if (a.state === 1 && b.state === 1) return a.startTime - b.startTime;
-    if (a.state === 1) return -1;
-    if (b.state === 1) return 1;
+    if (a.state === 1) return -1; if (b.state === 1) return 1;
     if (a.state === 2 && b.state === 2) return a.startTime - b.startTime;
-    if (a.state === 2) return -1;
-    if (b.state === 2) return 1;
-
+    if (a.state === 2) return -1; if (b.state === 2) return 1;
     let secOrder = { 'inside': 1, 'outside': 2, 'upstairs': 3, 'staff': 4 };
     if (secOrder[a.section] !== secOrder[b.section]) return secOrder[a.section] - secOrder[b.section];
-    if (a.idNum !== b.idNum) return a.idNum - b.idNum;
-    return a.partNum - b.partNum;
+    if (a.idNum !== b.idNum) return a.idNum - b.idNum; return a.partNum - b.partNum;
   });
 
   tablesArray.forEach(t => {
-    let card = document.createElement('div');
-    card.id = `card-${t.key}`;
-    card.className = `table-card state-${t.state}`;
+    let card = document.createElement('div'); card.id = `card-${t.key}`; card.className = `table-card state-${t.state}`;
     let html = `<div class="table-name">${t.name}</div>`;
+    if (t.state === 1) { html += `<div class="waiting-text">⏳ Hazırlanıyor</div><div class="timer" id="timer-${t.key}">00:00</div>`; } 
+    else if (t.state === 2) { html += `<div class="waiting-text">✔️ Gönderildi</div><div class="timer" id="timer-${t.key}">00:00</div>`; }
+    if (t.batches && t.batches.length > 0) { html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`; }
+    card.innerHTML = html; card.onclick = () => handleTableClick(t.key, t.name); grid.appendChild(card);
     
-    if (t.state === 1) {
-      html += `<div class="waiting-text">⏳ Hazırlanıyor</div><div class="timer" id="timer-${t.key}">00:00</div>`;
-    } else if (t.state === 2) {
-      html += `<div class="waiting-text">✔️ Gönderildi</div><div class="timer" id="timer-${t.key}">00:00</div>`;
-    }
-
-    if (t.batches && t.batches.length > 0) {
-      html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`;
-    }
-    card.innerHTML = html;
-    card.onclick = () => handleTableClick(t.key, t.name);
-    grid.appendChild(card);
-
-    let opt = document.createElement('option');
-    opt.value = t.key;
-    opt.innerText = t.name + ((t.state > 0) ? " (Açık)" : "");
-    selector.appendChild(opt);
+    let opt = document.createElement('option'); opt.value = t.key; opt.innerText = t.name + ((t.state > 0) ? " (Açık)" : ""); selector.appendChild(opt);
   });
-
   if (currentSelection && selector.querySelector(`option[value="${currentSelection}"]`)) selector.value = currentSelection;
-  localStorage.setItem('barTableMap_v7', JSON.stringify(tablesData));
-  updateTimers(); 
+  localStorage.setItem('barTableMap_v7', JSON.stringify(tablesData)); updateTimers(); 
 }
 
 function handleTableClick(key, name) {
-  let data = tablesData[key];
-  lastOpenedTableKey = key; 
-  
-  if (data.state === 0) {
-    data.state = 1; data.startTime = Date.now();
-  } else if (data.state === 1) {
+  let data = tablesData[key]; lastOpenedTableKey = key; 
+  if (data.state === 0) { data.state = 1; data.startTime = Date.now(); } 
+  else if (data.state === 1) {
     let diff = Math.floor((Date.now() - data.startTime) / 1000);
     salesData.totalPrepSeconds += diff; salesData.prepCount += 1;
-    localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData));
-    data.state = 2; 
-  } else if (data.state === 2) {
-    viewOrderModal(key, data.name); return; 
-  }
+    localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData)); data.state = 2; 
+  } else if (data.state === 2) { viewOrderModal(key, data.name); return; }
   renderTableMap();
 }
 
 let selectedTableKeyModal = null;
-
 function viewOrderModal(key, name) {
   selectedTableKeyModal = key; lastOpenedTableKey = key;
   let tableData = tablesData[key]; let box = document.getElementById('ticketBox');
   document.getElementById('modalTableTitle').innerText = `Masa ${name} Siparişi`;
-  
   document.getElementById('btnReady').style.display = (tableData.state === 1) ? 'block' : 'none';
   document.getElementById('btnRevertPrep').style.display = (tableData.state === 2) ? 'block' : 'none';
 
-  if (!tableData.batches || tableData.batches.length === 0) {
-    box.innerHTML = `<div class="ticket-empty">Henüz içecek eklenmedi.</div>`;
-  } else {
+  if (!tableData.batches || tableData.batches.length === 0) { box.innerHTML = `<div class="ticket-empty">Henüz içecek eklenmedi.</div>`; } 
+  else {
     let html = "";
     tableData.batches.forEach((batch, bIndex) => {
       html += `<div class="batch-header">Sipariş ${bIndex + 1} <small style="color:#6c757d; float:right;">${batch.time}</small></div>`;
@@ -540,8 +507,7 @@ function viewOrderModal(key, name) {
         html += `<div class="ticket-item"><span>${item.name}</span><div class="qty-controls">
                    <button class="qty-btn minus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, -1)">-</button>
                    <span class="qty-val">${item.qty}</span>
-                   <button class="qty-btn plus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, 1)">+</button>
-                 </div></div>`;
+                   <button class="qty-btn plus" onclick="editBatchItem('${key}', ${bIndex}, ${iIndex}, 1)">+</button></div></div>`;
       });
     });
     box.innerHTML = html;
@@ -557,7 +523,6 @@ function editBatchItem(tableKey, batchIndex, itemIndex, amount) {
   if (item.qty <= 0) batch.items.splice(itemIndex, 1); 
   if (batch.items.length === 0) data.batches.splice(batchIndex, 1); 
   if (data.batches.length === 0) { data.state = 0; data.startTime = null; closeOrderModal(); }
-
   localStorage.setItem('barTableMap_v7', JSON.stringify(tablesData));
   if (document.getElementById('tableModalBackdrop').style.display === 'flex') viewOrderModal(tableKey, data.name); 
   renderTableMap(); 
@@ -582,13 +547,10 @@ function modalMarkReady() {
 
 function modalRevertToPrep() { tablesData[selectedTableKeyModal].state = 1; renderTableMap(); closeOrderModal(); }
 
-// 💰 الخصم التلقائي المتقدم من الجرد عند الدفع وإغلاق الطاولة
 function modalCheckoutTable() {
   let data = tablesData[selectedTableKeyModal];
   let isStaff = (data.section === 'staff');
-  let confirmMsg = isStaff ? "Personel tüketimini kaydetmek istiyor musunuz?" : "Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?";
-  
-  if(confirm(confirmMsg)) {
+  if(confirm(isStaff ? "Personel tüketimini kaydetmek istiyor musunuz?" : "Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?")) {
     if(data.batches && data.batches.length > 0) {
       if (isStaff) { salesData.staffTables += 1; } else { salesData.totalTables += 1; }
       salesData.sections[data.section] = (salesData.sections[data.section] || 0) + 1;
@@ -596,31 +558,25 @@ function modalCheckoutTable() {
       
       data.batches.forEach(batch => {
         batch.items.forEach(item => {
-          // تسجيل المبيعات التقليدية
           salesData.totalDrinks += item.qty;
           salesData.items[item.name] = (salesData.items[item.name] || 0) + item.qty;
           salesData.baseItems[item.baseId] = (salesData.baseItems[item.baseId] || 0) + item.qty;
           salesData.hourlySales[hour] = (salesData.hourlySales[hour] || 0) + item.qty;
           let cat = itemCategoryMap[item.baseId] || "Diğer";
           salesData.categories[cat] = (salesData.categories[cat] || 0) + item.qty;
-          
-          // 📦 تطبيق الوصفة وخصم المواد الخام من الجرد تلقائياً
           consumeInventoryRecipe(item.baseId, item.variant, item.qty);
         });
       });
-      
       localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData));
       localStorage.setItem('barInventory_v2', JSON.stringify(stockData));
     }
-    data.state = 0; data.startTime = null; data.batches = [];
-    renderTableMap(); closeOrderModal();
+    data.state = 0; data.startTime = null; data.batches = []; renderTableMap(); closeOrderModal();
   }
 }
 
 function modalCancelTable() {
   if(confirm("DİKKAT: Masayı silmek istediğinize emin misiniz?")) {
-    let data = tablesData[selectedTableKeyModal];
-    data.state = 0; data.startTime = null; data.batches = [];
+    let data = tablesData[selectedTableKeyModal]; data.state = 0; data.startTime = null; data.batches = [];
     renderTableMap(); closeOrderModal();
   }
 }
@@ -630,52 +586,31 @@ function updateTimers() {
   for (const key in tablesData) {
     let data = tablesData[key];
     if (data.state > 0 && data.startTime) {
-      let diffSecs = Math.floor((now - data.startTime) / 1000);
-      let mins = Math.floor(diffSecs / 60); let secs = diffSecs % 60;
-      let formattedTime = (mins < 10 ? "0"+mins : mins) + ":" + (secs < 10 ? "0"+secs : secs);
+      let diffSecs = Math.floor((now - data.startTime) / 1000); let mins = Math.floor(diffSecs / 60); let secs = diffSecs % 60;
       let timerEl = document.getElementById(`timer-${key}`);
-      if(timerEl) timerEl.innerText = formattedTime;
+      if(timerEl) timerEl.innerText = (mins < 10 ? "0"+mins : mins) + ":" + (secs < 10 ? "0"+secs : secs);
     }
   }
 }
 setInterval(updateTimers, 1000);
 
 /* =========================================================
-   INVENTORY RECIPE ENGINE (وصفات البار والخصم التلقائي)
+   INVENTORY RECIPE ENGINE
    ========================================================= */
 function consumeInventoryRecipe(baseId, variant, qty) {
-  // خصم كوب كرتون قياسي لجميع المشروبات الورقية التي تقدم للزبائن
   if (baseId !== "trk") { stockData.bardak -= qty; }
-
-  // وصفات الاسبريسو والقهوة الساخنة والباردة
-  if (baseId === "esp") {
-      let gr = (variant === "Double") ? 18 : 9;
-      stockData.kahve -= (gr * qty);
-  } else if (baseId === "ame" || baseId === "i_ame") {
-      stockData.kahve -= (18 * qty);
-  } else if (baseId === "cap") {
-      stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty);
-  } else if (baseId === "lat_mac") {
-      stockData.kahve -= (18 * qty); stockData.sut -= (180 * qty);
-  } else if (baseId === "lat" || baseId === "i_lat") {
-      stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty);
-  } else if (baseId === "moc" || baseId === "i_moc") {
-      stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty);
-  } else if (baseId === "kar" || baseId === "i_kar") {
-      stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty);
-  } else if (baseId === "flt") {
-      stockData.kahve -= (18 * qty); stockData.sut -= (120 * qty);
-  } else if (baseId === "esp_mac") {
-      stockData.kahve -= (9 * qty); stockData.sut -= (30 * qty);
-  } else if (baseId === "trk") {
-      let gr = (variant === "Double") ? 14 : 7;
-      stockData.kahve -= (gr * qty);
-  } else if (baseId === "fil") {
-      stockData.kahve -= (15 * qty);
-  } else if (baseId === "sut") {
-      stockData.sut -= (100 * qty);
-  }
-  // المشروبات الباردة المعبأة (Adet) تتبع مباشر بالقطعة
+  if (baseId === "esp") { let gr = (variant === "Double") ? 18 : 9; stockData.kahve -= (gr * qty); } 
+  else if (baseId === "ame" || baseId === "i_ame") { stockData.kahve -= (18 * qty); } 
+  else if (baseId === "cap") { stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty); } 
+  else if (baseId === "lat_mac") { stockData.kahve -= (18 * qty); stockData.sut -= (180 * qty); } 
+  else if (baseId === "lat" || baseId === "i_lat") { stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty); } 
+  else if (baseId === "moc" || baseId === "i_moc") { stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty); } 
+  else if (baseId === "kar" || baseId === "i_kar") { stockData.kahve -= (18 * qty); stockData.sut -= (150 * qty); } 
+  else if (baseId === "flt") { stockData.kahve -= (18 * qty); stockData.sut -= (120 * qty); } 
+  else if (baseId === "esp_mac") { stockData.kahve -= (9 * qty); stockData.sut -= (30 * qty); } 
+  else if (baseId === "trk") { let gr = (variant === "Double") ? 14 : 7; stockData.kahve -= (gr * qty); } 
+  else if (baseId === "fil") { stockData.kahve -= (15 * qty); } 
+  else if (baseId === "sut") { stockData.sut -= (100 * qty); }
   else if (baseId === "cok") { stockData.cok -= qty; }
   else if (baseId === "fan") { stockData.fan -= qty; }
   else if (baseId === "spr") { stockData.spr -= qty; }
@@ -685,66 +620,64 @@ function consumeInventoryRecipe(baseId, variant, qty) {
   else if (baseId === "gazoz") { stockData.gazoz -= qty; }
   else if (baseId === "frutti") { stockData.frutti -= qty; }
   else if (baseId === "sod") { stockData.sod -= qty; }
-  else if (baseId === "chu") { stockData.sod -= qty; } // Churchill uses 1 soda
-  else if (baseId === "fuse") {
-      if (variant === "Şeftali") stockData.fuse_seftali -= qty;
-      if (variant === "Limon") stockData.fuse_limon -= qty;
-  } else if (baseId === "cappy") {
-      if (variant === "Vişne") stockData.cappy_visne -= qty;
-      if (variant === "Karışık") stockData.cappy_karisik -= qty;
-  }
+  else if (baseId === "chu") { stockData.sod -= qty; } 
+  else if (baseId === "fuse") { if (variant === "Şeftali") stockData.fuse_seftali -= qty; if (variant === "Limon") stockData.fuse_limon -= qty; } 
+  else if (baseId === "cappy") { if (variant === "Vişne") stockData.cappy_visne -= qty; if (variant === "Karışık") stockData.cappy_karisik -= qty; }
 }
 
 /* =========================================================
-   BAR MENU LOGIC & OCR CAMERA (COMPRESSED)
+   BAR MENU & OCR
    ========================================================= */
+let activeCatIndex = 0; let tempCart = {}; 
+
 function renderCategories() {
-  const tabs = document.getElementById("catTabs"); tabs.innerHTML = "";
-  BAR_MENU.forEach((cat, index) => {
-    let btn = document.createElement("button");
-    btn.className = `cat-btn ${index === activeCatIndex ? 'active' : ''}`;
-    btn.innerText = cat.category;
-    btn.onclick = () => { activeCatIndex = index; renderCategories(); renderItems(); };
-    tabs.appendChild(btn);
-  });
+  try {
+    const tabs = document.getElementById("catTabs"); tabs.innerHTML = "";
+    BAR_MENU.forEach((cat, index) => {
+      let btn = document.createElement("button"); btn.className = `cat-btn ${index === activeCatIndex ? 'active' : ''}`;
+      btn.innerText = cat.category; btn.onclick = () => { activeCatIndex = index; renderCategories(); renderItems(); }; tabs.appendChild(btn);
+    });
+  } catch(e) { console.error(e); }
 }
 
 function renderItems() {
-  const grid = document.getElementById("itemsGrid"); grid.innerHTML = "";
-  let items = [...BAR_MENU[activeCatIndex].items];
-  items.sort((a, b) => { return (salesData.baseItems[b.id] || 0) - (salesData.baseItems[a.id] || 0); });
+  try {
+    const grid = document.getElementById("itemsGrid"); grid.innerHTML = "";
+    let items = [...BAR_MENU[activeCatIndex].items];
+    
+    // الفرز الآمن لمنع الأخطاء الصامتة (Fail-Safe Sorting)
+    items.sort((a, b) => { 
+        let qtyA = (salesData && salesData.baseItems && salesData.baseItems[a.id]) ? salesData.baseItems[a.id] : 0;
+        let qtyB = (salesData && salesData.baseItems && salesData.baseItems[b.id]) ? salesData.baseItems[b.id] : 0;
+        return qtyB - qtyA; 
+    });
 
-  items.forEach(it => {
-    let square = document.createElement("div"); square.className = "item-square";
-    let html = `<div class="item-name" style="text-transform: capitalize;">${it.name.toLowerCase()}</div>`;
-    if (it.variants) {
-      html += `<div class="variants-row">`;
-      it.variants.forEach(v => { html += `<button class="btn-variant" onclick="addTempItem('${it.id}', '${it.name}', '${v.v}', '${v.code}')"><span class="code-badge">${v.code}</span> ${v.v}</button>`; });
-      html += `</div>`;
-    } else {
-      html += `<button class="btn" style="background:var(--accent); color:white; width:100%; display:flex; justify-content:center; align-items:center;" onclick="addTempItem('${it.id}', '${it.name}', '', '${it.code}')"><span class="code-badge">${it.code}</span> Ekle</button>`;
-    }
-    square.innerHTML = html; grid.appendChild(square);
-  });
+    items.forEach(it => {
+      let square = document.createElement("div"); square.className = "item-square";
+      let html = `<div class="item-name" style="text-transform: capitalize;">${it.name.toLowerCase()}</div>`;
+      if (it.variants) {
+        html += `<div class="variants-row">`;
+        it.variants.forEach(v => { html += `<button class="btn-variant" onclick="addTempItem('${it.id}', '${it.name}', '${v.v}', '${v.code}')"><span class="code-badge">${v.code}</span> ${v.v}</button>`; });
+        html += `</div>`;
+      } else {
+        html += `<button class="btn" style="background:var(--accent); color:white; width:100%; display:flex; justify-content:center; align-items:center;" onclick="addTempItem('${it.id}', '${it.name}', '', '${it.code}')"><span class="code-badge">${it.code}</span> Ekle</button>`;
+      }
+      square.innerHTML = html; grid.appendChild(square);
+    });
+  } catch(e) { console.error("Error in renderItems:", e); }
 }
 
 document.getElementById('quickAddInput').addEventListener('input', function() {
   let code = this.value.trim(); let hintEl = document.getElementById('quickAddHint');
-  if(code && quickCodeMap[code]) {
-      let item = quickCodeMap[code]; hintEl.innerText = item.name + (item.variant ? ` (${item.variant})` : ""); hintEl.style.color = "var(--good)";
-  } else if(code) { hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)"; } 
-  else { hintEl.innerText = ""; }
+  if(code && quickCodeMap[code]) { let item = quickCodeMap[code]; hintEl.innerText = item.name + (item.variant ? ` (${item.variant})` : ""); hintEl.style.color = "var(--good)"; } 
+  else if(code) { hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)"; } else { hintEl.innerText = ""; }
 });
 
 document.getElementById('quickAddInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') {
     e.preventDefault(); let code = this.value.trim();
-    if (quickCodeMap[code]) {
-      let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code);
-      this.value = ''; document.getElementById('quickAddHint').innerText = '';
-    } else {
-      this.style.borderColor = 'var(--bad)'; setTimeout(() => this.style.borderColor = 'var(--accent)', 300);
-    }
+    if (quickCodeMap[code]) { let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code); this.value = ''; document.getElementById('quickAddHint').innerText = ''; } 
+    else { this.style.borderColor = 'var(--bad)'; setTimeout(() => this.style.borderColor = 'var(--accent)', 300); }
   }
 });
 
@@ -759,13 +692,10 @@ function compressImage(file, callback) {
             let MAX_WIDTH = 1000; let ratio = 1;
             if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
             canvas.width = img.width * ratio; canvas.height = img.height * ratio;
-            ctx.filter = 'grayscale(100%)';
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'grayscale(100%)'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             callback(canvas.toDataURL('image/jpeg', 0.9));
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+        }; img.src = e.target.result;
+    }; reader.readAsDataURL(file);
 }
 
 document.getElementById('cameraFileInput').addEventListener('change', function(e) {
@@ -773,23 +703,19 @@ document.getElementById('cameraFileInput').addEventListener('change', function(e
   let btnLabel = document.getElementById('cameraBtnLabel'); btnLabel.innerHTML = "⏳"; 
 
   compressImage(file, function(compressedImageData) {
+      if(typeof Tesseract === 'undefined') { alert("Yapay zeka modülü yükleniyor, lütfen internet bağlantınızı kontrol edip tekrar deneyin."); btnLabel.innerHTML = "📷"; return; }
       Tesseract.recognize(compressedImageData, 'tur').then(({ data: { text } }) => {
         let normalizedText = normalizeForOCR(text); let addedCount = 0;
-        
         searchIndex.forEach(item => {
            let matchIndex = normalizedText.indexOf(item.searchStr);
            if(matchIndex !== -1) {
-               let qty = 1;
-               let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
-               let qtyMatch = preText.match(/(\d+)x/);
-               if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
-               
+               let qty = 1; let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
+               let qtyMatch = preText.match(/(\d+)x/); if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
                for(let i=0; i<qty; i++){ addTempItem(item.id, item.name, item.variant, item.code); }
                addedCount += qty; normalizedText = normalizedText.replace(item.searchStr, "");
            }
         });
-        if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı!`); } 
-        else { alert("Adisyonda eşleşen içecek bulunamadı."); }
+        if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı!`); } else { alert("Adisyonda eşleşen içecek bulunamadı."); }
         btnLabel.innerHTML = "📷";
       }).catch(err => { alert("Hata oluştu."); btnLabel.innerHTML = "📷"; });
   });
@@ -802,10 +728,7 @@ function addTempItem(id, name, variant, code) {
 }
 
 function changeTempQty(key, amount) {
-  if (tempCart[key]) {
-    tempCart[key].qty += amount; if (tempCart[key].qty <= 0) delete tempCart[key];
-    updateTempCartUI();
-  }
+  if (tempCart[key]) { tempCart[key].qty += amount; if (tempCart[key].qty <= 0) delete tempCart[key]; updateTempCartUI(); }
 }
 
 function updateTempCartUI() {
@@ -817,12 +740,9 @@ function updateTempCartUI() {
     html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:8px 10px; border-radius:6px; border:1px solid var(--line);">
         <span style="font-size:14px; font-weight:bold; text-transform:capitalize;">${item.name.toLowerCase()}</span>
         <div class="qty-controls">
-          <button class="qty-btn minus" onclick="changeTempQty('${k}', -1)">-</button>
-          <span class="qty-val">${item.qty}</span>
-          <button class="qty-btn plus" onclick="changeTempQty('${k}', 1)">+</button>
+          <button class="qty-btn minus" onclick="changeTempQty('${k}', -1)">-</button><span class="qty-val">${item.qty}</span><button class="qty-btn plus" onclick="changeTempQty('${k}', 1)">+</button>
         </div></div>`;
-  });
-  container.innerHTML = html;
+  }); container.innerHTML = html;
 }
 
 function assignOrderToTable() {
@@ -834,114 +754,90 @@ function assignOrderToTable() {
   let d = new Date(); let timeStr = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
   let newBatch = { time: timeStr, items: Object.keys(tempCart).map(k => ({ id: tempCart[k].id, baseId: tempCart[k].baseId, name: tempCart[k].name, qty: tempCart[k].qty })) };
   
-  if (!tableData.batches) tableData.batches = [];
-  tableData.batches.push(newBatch);
+  if (!tableData.batches) tableData.batches = []; tableData.batches.push(newBatch);
   if (tableData.state === 0 || tableData.state === 2) { if(tableData.state === 0) tableData.startTime = Date.now(); tableData.state = 1; }
-  tempCart = {}; updateTempCartUI(); document.getElementById('menuTableSelect').value = ""; 
-  renderTableMap(); switchTab('mapView', document.getElementById('tabMap')); 
+  tempCart = {}; updateTempCartUI(); document.getElementById('menuTableSelect').value = ""; renderTableMap(); switchTab('mapView', document.getElementById('tabMap')); 
 }
 
 /* =========================================================
-   4. INVENTORY & STATS RENDERING LOGIC
+   INVENTORY & STATS
    ========================================================= */
 function renderInventoryUI() {
-  let listContainer = document.getElementById('inventoryStatusList');
-  let addSelect = document.getElementById('addStockSelect');
-  let zayiSelect = document.getElementById('zayiStockSelect');
-  
-  listContainer.innerHTML = "";
-  addSelect.innerHTML = "";
-  zayiSelect.innerHTML = "";
+  try {
+    let listContainer = document.getElementById('inventoryStatusList'); let addSelect = document.getElementById('addStockSelect'); let zayiSelect = document.getElementById('zayiStockSelect');
+    listContainer.innerHTML = ""; addSelect.innerHTML = ""; zayiSelect.innerHTML = "";
 
-  for (let key in INVENTORY_ITEMS) {
-      let item = INVENTORY_ITEMS[key];
-      let currentVal = stockData[key];
-      let isKritik = currentVal <= item.limit;
-      
-      let card = document.createElement('div');
-      card.className = `stok-row ${isKritik ? 'kritik' : ''}`;
-      card.innerHTML = `<span>${item.name}</span> <span>${currentVal} ${item.unit} ${isKritik ? '⚠️ (Kritik)' : ''}</span>`;
-      listContainer.appendChild(card);
-
-      // تعبئة القوائم المنسدلة لإدخال المخزون والتوالف
-      let opt1 = document.createElement('option'); opt1.value = key; opt1.innerText = item.name;
-      let opt2 = document.createElement('option'); opt2.value = key; opt2.innerText = item.name;
-      addSelect.appendChild(opt1);
-      zayiSelect.appendChild(opt2);
-  }
+    for (let key in INVENTORY_ITEMS) {
+        let item = INVENTORY_ITEMS[key]; let currentVal = stockData[key]; let isKritik = currentVal <= item.limit;
+        let card = document.createElement('div'); card.className = `stok-row ${isKritik ? 'kritik' : ''}`;
+        card.innerHTML = `<span>${item.name}</span> <span>${currentVal} ${item.unit} ${isKritik ? '⚠️ (Kritik)' : ''}</span>`;
+        listContainer.appendChild(card);
+        let opt1 = document.createElement('option'); opt1.value = key; opt1.innerText = item.name;
+        let opt2 = document.createElement('option'); opt2.value = key; opt2.innerText = item.name;
+        addSelect.appendChild(opt1); zayiSelect.appendChild(opt2);
+    }
+  } catch(e) { console.error(e); }
 }
 
 function submitStockAction(type) {
   let selectEl = document.getElementById(type === 'add' ? 'addStockSelect' : 'zayiStockSelect');
   let qtyEl = document.getElementById(type === 'add' ? 'addStockQty' : 'zayiStockQty');
-  let itemKey = selectEl.value;
-  let qty = parseInt(qtyEl.value);
-
+  let itemKey = selectEl.value; let qty = parseInt(qtyEl.value);
   if(!qty || qty <= 0) { alert("Lütfen geçerli bir miktar girin!"); return; }
 
   if(type === 'add') { stockData[itemKey] += qty; alert("Stok başarıyla güncellendi (Eklendi)."); } 
   else { stockData[itemKey] -= qty; alert("Zayi/Fire başarıyla stoktan düşüldü."); }
-
-  qtyEl.value = "";
-  localStorage.setItem('barInventory_v2', JSON.stringify(stockData));
-  renderInventoryUI();
+  qtyEl.value = ""; localStorage.setItem('barInventory_v2', JSON.stringify(stockData)); renderInventoryUI();
 }
 
 function renderStats() {
-  document.getElementById('statTotalDrinks').innerText = salesData.totalDrinks;
-  document.getElementById('statTotalTables').innerText = salesData.totalTables;
+  try {
+    document.getElementById('statTotalDrinks').innerText = salesData.totalDrinks; document.getElementById('statTotalTables').innerText = salesData.totalTables;
+    let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] })).sort((a, b) => b.qty - a.qty); 
+    let top5 = itemsArr.slice(0, 5); let topHtml = "";
+    if(top5.length === 0) topHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
+    top5.forEach(it => { topHtml += `<div class="top-item-row"><span style="text-transform:capitalize;">${it.name.toLowerCase()}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`; });
+    document.getElementById('topItemsList').innerHTML = topHtml;
 
-  let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] })).sort((a, b) => b.qty - a.qty); 
-  let top5 = itemsArr.slice(0, 5);
-  let topHtml = "";
-  if(top5.length === 0) topHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
-  top5.forEach(it => { topHtml += `<div class="top-item-row"><span style="text-transform:capitalize;">${it.name.toLowerCase()}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`; });
-  document.getElementById('topItemsList').innerHTML = topHtml;
-
-  let catHtml = ""; let totalD = salesData.totalDrinks || 1; 
-  let catsArr = Object.keys(salesData.categories).map(k => ({ name: k, qty: salesData.categories[k] })).sort((a, b) => b.qty - a.qty);
-  if(catsArr.length === 0) catHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
-  catsArr.forEach(c => {
-    let pct = Math.round((c.qty / totalD) * 100);
-    catHtml += `<div class="cat-stat-row"><div class="cat-stat-header"><span>${c.name}</span><span>%${pct} (${c.qty})</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div></div>`;
-  });
-  document.getElementById('catDistributionList').innerHTML = catHtml;
+    let catHtml = ""; let totalD = salesData.totalDrinks || 1; 
+    let catsArr = Object.keys(salesData.categories).map(k => ({ name: k, qty: salesData.categories[k] })).sort((a, b) => b.qty - a.qty);
+    if(catsArr.length === 0) catHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
+    catsArr.forEach(c => {
+      let pct = Math.round((c.qty / totalD) * 100);
+      catHtml += `<div class="cat-stat-row"><div class="cat-stat-header"><span>${c.name}</span><span>%${pct} (${c.qty})</span></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div></div>`;
+    });
+    document.getElementById('catDistributionList').innerHTML = catHtml;
+  } catch(e) { console.error(e); }
 }
 
 function initiateShiftReset() {
   let avgSeconds = salesData.prepCount > 0 ? Math.floor(salesData.totalPrepSeconds / salesData.prepCount) : 0;
   let avgMins = Math.floor(avgSeconds / 60); let avgSecs = avgSeconds % 60;
   document.getElementById('sumPrepTime').innerText = `${avgMins}:${avgSecs.toString().padStart(2,'0')} dk`;
-
   let peakHour = "YOK"; let maxSales = 0;
   for(let h in salesData.hourlySales) { if(salesData.hourlySales[h] > maxSales) { maxSales = salesData.hourlySales[h]; peakHour = `${h}:00 - ${parseInt(h)+1}:00`; } }
   document.getElementById('sumPeakHour').innerText = peakHour;
 
-  let peakSec = "YOK"; let maxSec = 0;
-  let secNames = {'inside':'İç Mekan', 'outside':'Dış Mekan (B)', 'upstairs':'Üst Kat (A)', 'staff': 'Personel Tüketimi (P)'};
+  let peakSec = "YOK"; let maxSec = 0; let secNames = {'inside':'İç Mekan', 'outside':'Dış Mekan (B)', 'upstairs':'Üst Kat (A)', 'staff': 'Personel Tüketimi (P)'};
   for(let s in salesData.sections) { if(salesData.sections[s] > maxSec) { maxSec = salesData.sections[s]; peakSec = secNames[s]; } }
   document.getElementById('sumPeakSection').innerText = peakSec;
-
   document.getElementById('sumDrinks').innerText = salesData.totalDrinks;
   document.getElementById('sumTables').innerText = salesData.totalTables;
   document.getElementById('sumStaffTables').innerText = salesData.staffTables || 0;
 
-  let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] })).sort((a, b) => b.qty - a.qty).slice(0,5);
-  let topHtml = "";
+  let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] })).sort((a, b) => b.qty - a.qty).slice(0,5); let topHtml = "";
   itemsArr.forEach(it => { topHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="text-transform:capitalize;">${it.name.toLowerCase()}</span><strong>${it.qty}</strong></div>`; });
   document.getElementById('sumTopItems').innerHTML = topHtml || "Kayıt yok.";
-
   document.getElementById('shiftSummaryBackdrop').style.display = 'flex';
 }
 
 function confirmResetShift() {
   if(confirm("Emin misiniz? Tüm satış verileri silinecek (Stoklar kalacaktır) ve YENİ VARDİYA başlayacak!")) {
-    tablesData = {}; localStorage.removeItem('barTableMap_v6');
+    tablesData = {}; localStorage.removeItem('barTableMap_v7');
     salesData = { totalDrinks: 0, totalTables: 0, staffTables: 0, items: {}, baseItems: {}, categories: {}, hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 } };
-    localStorage.removeItem('barSalesHistory_v2');
+    localStorage.removeItem('barSalesHistory_v3');
     document.getElementById('shiftSummaryBackdrop').style.display = 'none';
-    renderTableMap(); renderStats();
+    renderTableMap(); renderStats(); renderItems();
   }
 }
 
