@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Akıllı Bar Sistemi</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
   <style>
     :root {
       --bg: #f4f7f6;
@@ -90,7 +93,7 @@
     .modal-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .btn-lg { padding: 10px; font-size: 14px; border-radius: 8px; font-weight: bold; width: 100%; border:none; cursor:pointer;}
 
-    /* ================= BAR MENU (STICKY HEADER & INPUT) ================= */
+    /* ================= BAR MENU ================= */
     .bar-menu-container { max-width: 900px; margin: 0 auto; padding: 10px; }
     
     .order-status-bar { 
@@ -103,12 +106,13 @@
     .table-selector-area select { padding: 6px; border-radius: 6px; border: none; font-size: 14px; font-weight: bold; background:#fff; color:var(--text);}
     .btn-return { background: var(--good); color: white; padding: 8px 15px; border-radius: 6px; border:none; font-weight:bold; cursor:pointer;}
 
-    /* QUICK ADD INPUT (KEYBOARD SHORTCUT) WITH HINT */
+    /* QUICK ADD & CAMERA SECTION */
     .quick-add-area {
       margin-bottom: 10px; position: -webkit-sticky; position: sticky; top: 160px; z-index: 84;
+      display: flex; gap: 8px; align-items: center;
     }
     .quick-input-wrapper {
-      position: relative; display: flex; align-items: center;
+      position: relative; display: flex; align-items: center; flex: 1;
     }
     .quick-add-input {
       width: 100%; padding: 12px 15px; font-size: 15px; font-weight: bold; border-radius: 8px;
@@ -120,6 +124,13 @@
       position: absolute; right: 15px; font-size: 13px; font-weight: bold; pointer-events: none; color: var(--muted);
     }
     
+    .camera-label-btn {
+      background: var(--accent); color: white; border-radius: 8px; padding: 12px;
+      font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      min-width: 45px; height: 45px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .camera-label-btn:active { background: var(--accent-light); }
+
     .code-badge {
       background: #e9ecef; color: var(--accent); border: 1px solid #ced4da;
       font-size: 10px; padding: 2px 5px; border-radius: 4px; margin-right: 4px;
@@ -197,6 +208,10 @@
         <input type="number" class="quick-add-input" id="quickAddInput" placeholder="⌨️ Kodu girin + Enter" inputmode="numeric" autocomplete="off">
         <div class="quick-hint" id="quickAddHint"></div>
       </div>
+      
+      <label for="cameraFileInput" class="camera-label-btn" id="cameraBtnLabel" title="Adisyon Oku">📷
+        <input type="file" accept="image/*" capture="environment" id="cameraFileInput" style="display:none;">
+      </label>
     </div>
     
     <div style="background:#fff; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--line);">
@@ -275,7 +290,7 @@
 
 <script>
 /* =========================================================
-   MENU DATA & CATEGORY MAPPING (WITH CODES)
+   MENU DATA & CATEGORY MAPPING
    ========================================================= */
 const BAR_MENU = [
   {
@@ -329,19 +344,26 @@ const BAR_MENU = [
 
 let itemCategoryMap = {};
 let quickCodeMap = {}; 
+let searchIndex = []; // مصفوفة لتسهيل البحث بالكلمات
 
 BAR_MENU.forEach(cat => { 
   cat.items.forEach(it => { 
     itemCategoryMap[it.id] = cat.category; 
     if(it.variants) {
-      it.variants.forEach(v => {
-        quickCodeMap[v.code] = { id: it.id, name: it.name, variant: v.v };
+      it.variants.forEach(v => { 
+          quickCodeMap[v.code] = { id: it.id, name: it.name, variant: v.v }; 
+          // حفظ الاسم مع الخيار (مثل: espresso double) بأحرف صغيرة لتسهيل البحث
+          searchIndex.push({ id: it.id, name: it.name, variant: v.v, code: v.code, searchStr: (it.name + " " + v.v).toLowerCase() });
       });
     } else {
       quickCodeMap[it.code] = { id: it.id, name: it.name, variant: "" };
+      searchIndex.push({ id: it.id, name: it.name, variant: "", code: it.code, searchStr: it.name.toLowerCase() });
     }
   }); 
 });
+
+// ترتيب مصفوفة البحث لتبحث عن الكلمات الطويلة أولاً لمنع التداخل (مثل Ice Latte قبل Latte)
+searchIndex.sort((a, b) => b.searchStr.length - a.searchStr.length);
 
 /* =========================================================
    1. GLOBAL STATE & NAVIGATION
@@ -357,9 +379,7 @@ function switchTab(viewId, btnEl) {
   if(viewId === 'statsView') renderStats();
   if(viewId === 'menuView') {
     let sel = document.getElementById('menuTableSelect');
-    if(lastOpenedTableKey && sel.querySelector(`option[value="${lastOpenedTableKey}"]`)) {
-      sel.value = lastOpenedTableKey;
-    }
+    if(lastOpenedTableKey && sel.querySelector(`option[value="${lastOpenedTableKey}"]`)) sel.value = lastOpenedTableKey;
     setTimeout(() => document.getElementById('quickAddInput').focus(), 100);
   }
 }
@@ -370,14 +390,15 @@ function switchTab(viewId, btnEl) {
 let tablesData = JSON.parse(localStorage.getItem('barTableMap_v6')) || {};
 let salesData = JSON.parse(localStorage.getItem('barSalesHistory_v2')) || { 
   totalDrinks: 0, totalTables: 0, items: {}, baseItems: {}, categories: {},
-  hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0 }
+  hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 }
 };
 
 function initDataIfMissing() {
   const sections = [
     { id: 'inside', prefix: '', count: 10 },
     { id: 'outside', prefix: 'B', count: 6 },
-    { id: 'upstairs', prefix: 'A', count: 9 }
+    { id: 'upstairs', prefix: 'A', count: 9 },
+    { id: 'staff', prefix: 'P', count: 2 }
   ];
   let isMissing = Object.keys(tablesData).length === 0;
   sections.forEach(sec => {
@@ -412,7 +433,7 @@ function renderTableMap() {
     if (a.state === 2) return -1;
     if (b.state === 2) return 1;
 
-    let secOrder = { 'inside': 1, 'outside': 2, 'upstairs': 3 };
+    let secOrder = { 'inside': 1, 'outside': 2, 'upstairs': 3, 'staff': 4 };
     if (secOrder[a.section] !== secOrder[b.section]) return secOrder[a.section] - secOrder[b.section];
     if (a.idNum !== b.idNum) return a.idNum - b.idNum;
     return a.partNum - b.partNum;
@@ -443,9 +464,7 @@ function renderTableMap() {
     selector.appendChild(opt);
   });
 
-  if (currentSelection && selector.querySelector(`option[value="${currentSelection}"]`)) {
-    selector.value = currentSelection;
-  }
+  if (currentSelection && selector.querySelector(`option[value="${currentSelection}"]`)) selector.value = currentSelection;
   
   localStorage.setItem('barTableMap_v6', JSON.stringify(tablesData));
   updateTimers(); 
@@ -483,7 +502,6 @@ function viewOrderModal(key, name) {
   let box = document.getElementById('ticketBox');
   document.getElementById('modalTableTitle').innerText = `Masa ${name} Siparişi`;
   
-  // التحكم بظهور الأزرار حسب حالة الطاولة
   document.getElementById('btnReady').style.display = (tableData.state === 1) ? 'block' : 'none';
   document.getElementById('btnRevertPrep').style.display = (tableData.state === 2) ? 'block' : 'none';
 
@@ -528,10 +546,7 @@ function editBatchItem(tableKey, batchIndex, itemIndex, amount) {
 
 function modalOpenMenu() {
   let data = tablesData[selectedTableKeyModal];
-  if(data.state === 0 || data.state === 2) {
-      data.startTime = Date.now(); 
-      data.state = 1; 
-  }
+  if(data.state === 0 || data.state === 2) { data.startTime = Date.now(); data.state = 1; }
   document.getElementById('menuTableSelect').value = selectedTableKeyModal;
   closeOrderModal();
   switchTab('menuView', document.getElementById('tabMenu'));
@@ -545,21 +560,19 @@ function modalMarkReady() {
       salesData.prepCount += 1;
       localStorage.setItem('barSalesHistory_v2', JSON.stringify(salesData));
   }
-  data.state = 2; 
-  renderTableMap(); closeOrderModal();
+  data.state = 2; renderTableMap(); closeOrderModal();
 }
 
 function modalRevertToPrep() {
-  let data = tablesData[selectedTableKeyModal];
-  data.state = 1; // إعادتها لحالة قيد التحضير
-  renderTableMap(); 
-  closeOrderModal();
+  tablesData[selectedTableKeyModal].state = 1; renderTableMap(); closeOrderModal();
 }
 
 function modalCheckoutTable() {
-  if(confirm("Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?")) {
-    let data = tablesData[selectedTableKeyModal];
-    
+  let data = tablesData[selectedTableKeyModal];
+  let isStaff = (data.section === 'staff');
+  let confirmMsg = isStaff ? "Personel tüketimini kaydetmek istiyor musunuz?" : "Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?";
+  
+  if(confirm(confirmMsg)) {
     if(data.batches && data.batches.length > 0) {
       salesData.totalTables += 1;
       salesData.sections[data.section] = (salesData.sections[data.section] || 0) + 1;
@@ -604,11 +617,10 @@ function updateTimers() {
     }
   }
 }
-
 setInterval(updateTimers, 1000);
 
 /* =========================================================
-   3. BAR MENU LOGIC (AUTO-SORTING & KEYBOARD INPUT)
+   3. BAR MENU LOGIC & OCR INTELLIGENCE
    ========================================================= */
 let activeCatIndex = 0; 
 let tempCart = {}; 
@@ -626,22 +638,15 @@ function renderCategories() {
 
 function renderItems() {
   const grid = document.getElementById("itemsGrid"); grid.innerHTML = "";
-  
   let items = [...BAR_MENU[activeCatIndex].items];
-  items.sort((a, b) => {
-      let qtyA = salesData.baseItems[a.id] || 0;
-      let qtyB = salesData.baseItems[b.id] || 0;
-      return qtyB - qtyA;
-  });
+  items.sort((a, b) => { return (salesData.baseItems[b.id] || 0) - (salesData.baseItems[a.id] || 0); });
 
   items.forEach(it => {
     let square = document.createElement("div"); square.className = "item-square";
     let html = `<div class="item-name">${it.name}</div>`;
     if (it.variants) {
       html += `<div class="variants-row">`;
-      it.variants.forEach(v => { 
-        html += `<button class="btn-variant" onclick="addTempItem('${it.id}', '${it.name}', '${v.v}', '${v.code}')"><span class="code-badge">${v.code}</span> ${v.v}</button>`; 
-      });
+      it.variants.forEach(v => { html += `<button class="btn-variant" onclick="addTempItem('${it.id}', '${it.name}', '${v.v}', '${v.code}')"><span class="code-badge">${v.code}</span> ${v.v}</button>`; });
       html += `</div>`;
     } else {
       html += `<button class="btn" style="background:var(--accent); color:white; width:100%; display:flex; justify-content:center; align-items:center;" onclick="addTempItem('${it.id}', '${it.name}', '', '${it.code}')"><span class="code-badge">${it.code}</span> Ekle</button>`;
@@ -650,36 +655,64 @@ function renderItems() {
   });
 }
 
-// إظهار تلميح أثناء إدخال الرقم
-document.getElementById('quickAddInput').addEventListener('input', function(e) {
-  let code = this.value.trim();
-  let hintEl = document.getElementById('quickAddHint');
+document.getElementById('quickAddInput').addEventListener('input', function() {
+  let code = this.value.trim(); let hintEl = document.getElementById('quickAddHint');
   if(code && quickCodeMap[code]) {
-      let item = quickCodeMap[code];
-      hintEl.innerText = item.name + (item.variant ? ` (${item.variant})` : "");
-      hintEl.style.color = "var(--good)";
+      let item = quickCodeMap[code]; hintEl.innerText = item.name + (item.variant ? ` (${item.variant})` : ""); hintEl.style.color = "var(--good)";
   } else if(code) {
-      hintEl.innerText = "Hatalı Kod!";
-      hintEl.style.color = "var(--bad)";
-  } else {
-      hintEl.innerText = "";
-  }
+      hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)";
+  } else { hintEl.innerText = ""; }
 });
 
 document.getElementById('quickAddInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') {
-    e.preventDefault();
-    let code = this.value.trim();
+    e.preventDefault(); let code = this.value.trim();
     if (quickCodeMap[code]) {
-      let item = quickCodeMap[code];
-      addTempItem(item.id, item.name, item.variant, code);
-      this.value = ''; 
-      document.getElementById('quickAddHint').innerText = ''; // تفريغ التلميح بعد الإضافة
+      let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code);
+      this.value = ''; document.getElementById('quickAddHint').innerText = '';
     } else {
-      this.style.borderColor = 'var(--bad)';
-      setTimeout(() => this.style.borderColor = 'var(--accent)', 300);
+      this.style.borderColor = 'var(--bad)'; setTimeout(() => this.style.borderColor = 'var(--accent)', 300);
     }
   }
+});
+
+// 📷 قراءة النص التركي من الصورة باستخدام Tesseract
+document.getElementById('cameraFileInput').addEventListener('change', function(e) {
+  let file = e.target.files[0];
+  if (!file) return;
+
+  let btnLabel = document.getElementById('cameraBtnLabel');
+  btnLabel.innerHTML = "⏳"; 
+
+  // نستخدم لغة 'tur' للقراءة الصحيحة للأسماء التركية
+  Tesseract.recognize(file, 'tur', { logger: m => console.log(m) }).then(({ data: { text } }) => {
+    let lowerText = text.toLowerCase();
+    let addedCount = 0;
+    
+    // تمرير الكلمات المفتاحية للبحث داخل النص المقروء
+    searchIndex.forEach(item => {
+       if(lowerText.includes(item.searchStr)) {
+           // إذا وجد تطابقاً لاسم المشروب، يضيفه
+           addTempItem(item.id, item.name, item.variant, item.code);
+           addedCount++;
+           // مسح الكلمة لتجنب تكرار قراءتها (مثال: حتى لا يقرأ Latte مرتين إذا كانت Ice Latte)
+           lowerText = lowerText.replace(item.searchStr, "");
+       }
+    });
+    
+    if(addedCount > 0) {
+      alert(`🎉 Adisyondan ${addedCount} içecek algılandı ve sepete eklendi!`);
+    } else {
+      alert("Adisyonda eşleşen içecek bulunamadı. Lütfen yazının net olduğuna emin olun.");
+    }
+    
+    btnLabel.innerHTML = "📷";
+    document.getElementById('cameraFileInput').value = ""; 
+  }).catch(err => {
+    console.error(err);
+    alert("Fotoğraf okunurken hata oluştu.");
+    btnLabel.innerHTML = "📷";
+  });
 });
 
 function addTempItem(id, name, variant, code) {
@@ -752,31 +785,22 @@ function renderStats() {
   document.getElementById('statTotalDrinks').innerText = salesData.totalDrinks;
   document.getElementById('statTotalTables').innerText = salesData.totalTables;
 
-  let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] }));
-  itemsArr.sort((a, b) => b.qty - a.qty); 
+  let itemsArr = Object.keys(salesData.items).map(k => ({ name: k, qty: salesData.items[k] })).sort((a, b) => b.qty - a.qty); 
   let top5 = itemsArr.slice(0, 5);
   
   let topHtml = "";
   if(top5.length === 0) topHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
-  top5.forEach(it => {
-    topHtml += `<div class="top-item-row"><span>${it.name}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`;
-  });
+  top5.forEach(it => { topHtml += `<div class="top-item-row"><span>${it.name}</span><span style="color:var(--accent);">${it.qty} Adet</span></div>`; });
   document.getElementById('topItemsList').innerHTML = topHtml;
 
-  let catHtml = "";
-  let totalD = salesData.totalDrinks || 1; 
-  let catsArr = Object.keys(salesData.categories).map(k => ({ name: k, qty: salesData.categories[k] }));
-  catsArr.sort((a, b) => b.qty - a.qty);
+  let catHtml = ""; let totalD = salesData.totalDrinks || 1; 
+  let catsArr = Object.keys(salesData.categories).map(k => ({ name: k, qty: salesData.categories[k] })).sort((a, b) => b.qty - a.qty);
 
   if(catsArr.length === 0) catHtml = "<div class='ticket-empty'>Kayıt yok.</div>";
   catsArr.forEach(c => {
     let pct = Math.round((c.qty / totalD) * 100);
-    catHtml += `
-      <div class="cat-stat-row">
-        <div class="cat-stat-header"><span>${c.name}</span><span>%${pct} (${c.qty})</span></div>
-        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div>
-      </div>
-    `;
+    catHtml += `<div class="cat-stat-row"><div class="cat-stat-header"><span>${c.name}</span><span>%${pct} (${c.qty})</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div></div>`;
   });
   document.getElementById('catDistributionList').innerHTML = catHtml;
 }
@@ -787,16 +811,12 @@ function initiateShiftReset() {
   document.getElementById('sumPrepTime').innerText = `${avgMins}:${avgSecs.toString().padStart(2,'0')} dk`;
 
   let peakHour = "YOK"; let maxSales = 0;
-  for(let h in salesData.hourlySales) {
-      if(salesData.hourlySales[h] > maxSales) { maxSales = salesData.hourlySales[h]; peakHour = `${h}:00 - ${parseInt(h)+1}:00`; }
-  }
+  for(let h in salesData.hourlySales) { if(salesData.hourlySales[h] > maxSales) { maxSales = salesData.hourlySales[h]; peakHour = `${h}:00 - ${parseInt(h)+1}:00`; } }
   document.getElementById('sumPeakHour').innerText = peakHour;
 
   let peakSec = "YOK"; let maxSec = 0;
-  let secNames = {'inside':'İç Mekan', 'outside':'Dış Mekan (B)', 'upstairs':'Üst Kat (A)'};
-  for(let s in salesData.sections) {
-      if(salesData.sections[s] > maxSec) { maxSec = salesData.sections[s]; peakSec = secNames[s]; }
-  }
+  let secNames = {'inside':'İç Mekan', 'outside':'Dış Mekan (B)', 'upstairs':'Üst Kat (A)', 'staff': 'Personel P'};
+  for(let s in salesData.sections) { if(salesData.sections[s] > maxSec) { maxSec = salesData.sections[s]; peakSec = secNames[s]; } }
   document.getElementById('sumPeakSection').innerText = peakSec;
 
   document.getElementById('sumDrinks').innerText = salesData.totalDrinks;
@@ -813,7 +833,7 @@ function initiateShiftReset() {
 function confirmResetShift() {
   if(confirm("Emin misiniz? Tüm veriler silinecek ve YENİ VARDİYA başlayacak!")) {
     tablesData = {}; localStorage.removeItem('barTableMap_v6');
-    salesData = { totalDrinks: 0, totalTables: 0, items: {}, baseItems: {}, categories: {}, hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0 } };
+    salesData = { totalDrinks: 0, totalTables: 0, items: {}, baseItems: {}, categories: {}, hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 } };
     localStorage.removeItem('barSalesHistory_v2');
     document.getElementById('shiftSummaryBackdrop').style.display = 'none';
     renderTableMap(); renderStats();
@@ -821,9 +841,7 @@ function confirmResetShift() {
 }
 
 /* INIT */
-(function init(){
-  renderTableMap(); renderCategories(); renderItems();
-})();
+(function init(){ renderTableMap(); renderCategories(); renderItems(); })();
 </script>
 </body>
 </html>
