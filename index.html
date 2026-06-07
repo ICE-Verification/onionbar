@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Akıllı Bar Sistemi</title>
-
+  
   <style>
     :root {
       --bg: #f4f7f6;
@@ -173,7 +173,6 @@
   <button class="app-nav-btn" onclick="switchTab('inventoryView', this)" id="tabInventory">📦 Stok ve Zayi</button>
 </nav>
 
-<!-- MAP VIEW -->
 <div id="mapView" class="app-view active">
   <div class="map-container">
     <div id="allTablesGrid" class="grid-container active"></div>
@@ -181,7 +180,6 @@
   </div>
 </div>
 
-<!-- BAR MENU VIEW -->
 <div id="menuView" class="app-view">
   <div class="bar-menu-container">
     <div class="order-status-bar">
@@ -212,7 +210,6 @@
   </div>
 </div>
 
-<!-- REPORTS VIEW -->
 <div id="statsView" class="app-view">
   <div class="stats-container">
     <div class="stats-grid">
@@ -230,7 +227,6 @@
   </div>
 </div>
 
-<!-- INVENTORY VIEW -->
 <div id="inventoryView" class="app-view">
   <div class="stats-container">
     <div class="stats-section">
@@ -256,7 +252,6 @@
   </div>
 </div>
 
-<!-- Table Action Modal -->
 <div id="tableModalBackdrop">
   <div class="modal-box">
     <div class="modal-header">
@@ -274,7 +269,6 @@
   </div>
 </div>
 
-<!-- Shift Summary Modal -->
 <div id="shiftSummaryBackdrop">
   <div class="modal-box" style="background: #f8f9fa;">
     <div class="modal-header">
@@ -295,12 +289,11 @@
   </div>
 </div>
 
-<!-- تحميل مكتبة الذكاء الاصطناعي في أسفل الصفحة لعدم إبطاء الواجهة -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <script>
 /* =========================================================
-   MENU DATA & CATEGORY MAPPING
+   MENU DATA & CATEGORY MAPPING (EXACTLY MATCHING NARPOS)
    ========================================================= */
 const BAR_MENU = [
   {
@@ -393,15 +386,11 @@ BAR_MENU.forEach(cat => {
 searchIndex.sort((a, b) => b.searchStr.length - a.searchStr.length);
 
 /* =========================================================
-   SAFE LOCAL STORAGE LOADING (يمنع أي أعطال بسبب الذاكرة القديمة)
+   SAFE LOCAL STORAGE LOADING
    ========================================================= */
 function getSafeData(key, defaultData) {
-    try {
-        let data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : defaultData;
-    } catch(e) {
-        return defaultData;
-    }
+    try { let data = localStorage.getItem(key); return data ? JSON.parse(data) : defaultData; } 
+    catch(e) { return defaultData; }
 }
 
 let tablesData = getSafeData('barTableMap_v7', {});
@@ -472,7 +461,6 @@ function renderTableMap() {
     else if (t.state === 2) { html += `<div class="waiting-text">✔️ Gönderildi</div><div class="timer" id="timer-${t.key}">00:00</div>`; }
     if (t.batches && t.batches.length > 0) { html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`; }
     card.innerHTML = html; card.onclick = () => handleTableClick(t.key, t.name); grid.appendChild(card);
-    
     let opt = document.createElement('option'); opt.value = t.key; opt.innerText = t.name + ((t.state > 0) ? " (Açık)" : ""); selector.appendChild(opt);
   });
   if (currentSelection && selector.querySelector(`option[value="${currentSelection}"]`)) selector.value = currentSelection;
@@ -644,8 +632,6 @@ function renderItems() {
   try {
     const grid = document.getElementById("itemsGrid"); grid.innerHTML = "";
     let items = [...BAR_MENU[activeCatIndex].items];
-    
-    // الفرز الآمن لمنع الأخطاء الصامتة (Fail-Safe Sorting)
     items.sort((a, b) => { 
         let qtyA = (salesData && salesData.baseItems && salesData.baseItems[a.id]) ? salesData.baseItems[a.id] : 0;
         let qtyB = (salesData && salesData.baseItems && salesData.baseItems[b.id]) ? salesData.baseItems[b.id] : 0;
@@ -681,45 +667,61 @@ document.getElementById('quickAddInput').addEventListener('keypress', function(e
   }
 });
 
-document.getElementById('cameraFileInput').addEventListener('click', function() { this.value = null; });
 
-function compressImage(file, callback) {
-    let reader = new FileReader();
-    reader.onload = function(e) {
-        let img = new Image();
-        img.onload = function() {
-            let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
-            let MAX_WIDTH = 1000; let ratio = 1;
-            if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
-            canvas.width = img.width * ratio; canvas.height = img.height * ratio;
-            ctx.filter = 'grayscale(100%)'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            callback(canvas.toDataURL('image/jpeg', 0.9));
-        }; img.src = e.target.result;
-    }; reader.readAsDataURL(file);
-}
-
+// 📷 قراءة النص المعتمدة على المطابقة الدقيقة مع حل مشكلة تعليق الكاميرا
 document.getElementById('cameraFileInput').addEventListener('change', function(e) {
-  let file = e.target.files[0]; if (!file) return;
-  let btnLabel = document.getElementById('cameraBtnLabel'); btnLabel.innerHTML = "⏳"; 
+  let file = e.target.files[0];
+  
+  // الحل الجذري: مسح قيمة الزر فوراً بعد أخذ الصورة لكي يفتح فوراً في المرة القادمة
+  e.target.value = ''; 
+  
+  if (!file) return;
 
-  compressImage(file, function(compressedImageData) {
-      if(typeof Tesseract === 'undefined') { alert("Yapay zeka modülü yükleniyor, lütfen internet bağlantınızı kontrol edip tekrar deneyin."); btnLabel.innerHTML = "📷"; return; }
-      Tesseract.recognize(compressedImageData, 'tur').then(({ data: { text } }) => {
-        let normalizedText = normalizeForOCR(text); let addedCount = 0;
-        searchIndex.forEach(item => {
-           let matchIndex = normalizedText.indexOf(item.searchStr);
-           if(matchIndex !== -1) {
-               let qty = 1; let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
-               let qtyMatch = preText.match(/(\d+)x/); if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
-               for(let i=0; i<qty; i++){ addTempItem(item.id, item.name, item.variant, item.code); }
-               addedCount += qty; normalizedText = normalizedText.replace(item.searchStr, "");
-           }
-        });
-        if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı!`); } else { alert("Adisyonda eşleşen içecek bulunamadı."); }
-        btnLabel.innerHTML = "📷";
-      }).catch(err => { alert("Hata oluştu."); btnLabel.innerHTML = "📷"; });
-  });
+  let btnLabel = document.getElementById('cameraBtnLabel');
+  btnLabel.innerHTML = "⏳"; 
+
+  let reader = new FileReader();
+  reader.onload = function(e) {
+      let img = new Image();
+      img.onload = function() {
+          let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
+          let MAX_WIDTH = 1000; let ratio = 1;
+          if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
+          canvas.width = img.width * ratio; canvas.height = img.height * ratio;
+          ctx.filter = 'grayscale(100%)'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          let compressedImageData = canvas.toDataURL('image/jpeg', 0.9);
+
+          if(typeof Tesseract === 'undefined') { 
+              alert("Yapay zeka modülü yükleniyor, lütfen internet bağlantınızı kontrol edip tekrar deneyin."); 
+              btnLabel.innerHTML = "📷"; 
+              return; 
+          }
+          Tesseract.recognize(compressedImageData, 'tur').then(({ data: { text } }) => {
+            let normalizedText = normalizeForOCR(text);
+            let addedCount = 0;
+            
+            searchIndex.forEach(item => {
+               let matchIndex = normalizedText.indexOf(item.searchStr);
+               if(matchIndex !== -1) {
+                   let qty = 1;
+                   let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
+                   let qtyMatch = preText.match(/(\d+)x/);
+                   if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
+                   
+                   for(let i=0; i<qty; i++){ addTempItem(item.id, item.name, item.variant, item.code); }
+                   addedCount += qty;
+                   normalizedText = normalizedText.replace(item.searchStr, "");
+               }
+            });
+            
+            if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı ve sepete eklendi!`); } 
+            else { alert("Adisyonda eşleşen içecek bulunamadı. Lütfen yazının net olduğuna emin olun."); }
+            btnLabel.innerHTML = "📷";
+          }).catch(err => { alert("Fotoğraf okunurken hata oluştu."); btnLabel.innerHTML = "📷"; });
+      }; img.src = e.target.result;
+  }; reader.readAsDataURL(file);
 });
+
 
 function addTempItem(id, name, variant, code) {
   let key = variant ? `${id}_${variant}` : id; let displayName = variant ? `${name} (${variant})` : name;
