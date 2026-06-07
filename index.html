@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Akıllı Bar Sistemi</title>
-  
+
   <style>
     :root {
       --bg: #f4f7f6;
@@ -57,20 +57,18 @@
       justify-content: center; align-items: center; min-height: 75px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; position: relative;
     }
-    .table-card.state-0 { background-color: #fff; opacity: 0.8;}
-    .table-card.state-1 { background-color: #ffeeba; border-color: var(--warning); transform: scale(1.03); box-shadow: 0 4px 8px rgba(255,193,7,0.3);} 
-    .table-card.state-2 { background-color: #d4edda; border-color: var(--good); } 
+    .table-card.state-0 { background: #fff; opacity: 0.8;}
+    .table-card.state-1 { background: #ffeeba; border-color: var(--warning); transform: scale(1.02); } 
+    .table-card.state-2 { background: #d4edda; border-color: var(--good); } 
 
     .table-name { font-size: 18px; font-weight: 900; margin-bottom: 2px; }
-    .timer { font-size: 12px; font-family: monospace; font-weight: bold; color: var(--bad); }
     .waiting-text { font-size: 10px; font-weight: bold; margin-bottom: 2px;}
     .state-1 .waiting-text { color: #d39e00; }
     .state-2 .waiting-text { color: var(--good); }
-    .state-2 .timer { color: var(--good); }
     
     .view-order-btn {
       position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.1); border: none;
-      border-radius: 4px; padding: 2px 5px; font-size: 11px; cursor: pointer; font-weight: bold;
+      border-radius: 4px; padding: 4px 6px; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 10;
     }
 
     /* ================= MODALS ================= */
@@ -91,18 +89,20 @@
 
     /* ================= BAR MENU ================= */
     .bar-menu-container { max-width: 900px; margin: 0 auto; padding: 10px; }
+    
+    /* الهيكل الموحد المطور لثبات القوائم العلوية 100% */
+    .menu-sticky-wrapper {
+      position: -webkit-sticky; position: sticky; top: 100px; z-index: 85; background: var(--bg); padding-bottom: 8px;
+    }
     .order-status-bar { 
-      background: var(--accent-light); color: white; padding: 10px 15px; border-radius: 10px; margin-bottom: 10px; 
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-      position: -webkit-sticky; position: sticky; top: 100px; z-index: 85; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      background: var(--accent-light); color: white; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; 
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .table-selector-area { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold;}
     .table-selector-area select { padding: 6px; border-radius: 6px; border: none; font-size: 14px; font-weight: bold; background:#fff; color:var(--text);}
     .btn-return { background: var(--good); color: white; padding: 8px 15px; border-radius: 6px; border:none; font-weight:bold; cursor:pointer;}
 
-    .quick-add-area {
-      margin-bottom: 10px; position: -webkit-sticky; position: sticky; top: 160px; z-index: 84; display: flex; gap: 8px; align-items: center;
-    }
+    .quick-add-area { display: flex; gap: 8px; align-items: center; }
     .quick-input-wrapper { position: relative; display: flex; align-items: center; flex: 1; }
     .quick-add-input {
       width: 100%; padding: 12px 15px; font-size: 15px; font-weight: bold; border-radius: 8px;
@@ -118,7 +118,7 @@
       background: #e9ecef; color: var(--accent); border: 1px solid #ced4da; font-size: 10px; padding: 2px 5px; border-radius: 4px; margin-right: 4px; font-weight: 900; box-shadow: 0 1px 0 #ced4da; display: inline-block;
     }
 
-    .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; }
+    .cat-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; margin-top: 5px; }
     .cat-btn { white-space: nowrap; padding: 8px 15px; background: #e9ecef; border: none; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; }
     .cat-btn.active { background: var(--accent); color: white; }
 
@@ -182,22 +182,26 @@
 
 <div id="menuView" class="app-view">
   <div class="bar-menu-container">
-    <div class="order-status-bar">
-      <div class="table-selector-area">
-        Masa:
-        <select id="menuTableSelect"><option value="">Seçiniz...</option></select>
+    
+    <div class="menu-sticky-wrapper">
+      <div class="order-status-bar">
+        <div class="table-selector-area">
+          Masa:
+          <select id="menuTableSelect"><option value="">Seçiniz...</option></select>
+          <span id="stickyTableTimer" style="margin-left:10px; font-family:monospace; font-weight:bold; font-size:16px;"></span>
+        </div>
+        <button class="btn-return" onclick="assignOrderToTable()">Masaya Gönder</button>
       </div>
-      <button class="btn-return" onclick="assignOrderToTable()">Masaya Gönder</button>
-    </div>
 
-    <div class="quick-add-area">
-      <div class="quick-input-wrapper">
-        <input type="number" class="quick-add-input" id="quickAddInput" placeholder="⌨️ Kodu girin + Enter" inputmode="numeric" autocomplete="off">
-        <div class="quick-hint" id="quickAddHint"></div>
+      <div class="quick-add-area">
+        <div class="quick-input-wrapper">
+          <input type="number" class="quick-add-input" id="quickAddInput" placeholder="⌨️ Kodu girin + Enter" inputmode="numeric" autocomplete="off">
+          <div class="quick-hint" id="quickAddHint"></div>
+        </div>
+        <label for="cameraFileInput" class="camera-label-btn" id="cameraBtnLabel" title="Adisyon Oku">📷
+          <input type="file" accept="image/*" capture="environment" id="cameraFileInput" style="display:none;">
+        </label>
       </div>
-      <label for="cameraFileInput" class="camera-label-btn" id="cameraBtnLabel" title="Adisyon Oku">📷
-        <input type="file" accept="image/*" capture="environment" id="cameraFileInput" style="display:none;">
-      </label>
     </div>
     
     <div style="background:#fff; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--line);">
@@ -293,13 +297,14 @@
 
 <script>
 /* =========================================================
-   MENU DATA & CATEGORY MAPPING (EXACTLY MATCHING NARPOS)
+   MENU DATA & CATEGORY MAPPING (COCA COLA ZERO ADDED)
    ========================================================= */
 const BAR_MENU = [
   {
     category: "Soğuk İçecekler",
     items: [
       { id:"cok", name: "COCA COLA", code: "1" },
+      { id:"cok_z", name: "COCA COLA ZERO", code: "2" }, // إعادتها لقاموس الأكواد والذكاء الاصطناعي
       { id:"fan", name: "FANTA", code: "3" },
       { id:"spr", name: "SPRİTE", code: "4" },
       { id:"fuse", name: "FUSE TEA", variants: [{v:"Şeftali", code:"5"}, {v:"Limon", code:"6"}] },
@@ -348,6 +353,7 @@ const INVENTORY_ITEMS = {
   sut: { name: "Süt (ml)", unit: "ml", limit: 1000 },
   bardak: { name: "Karton Bardak (Adet)", unit: "Adet", limit: 10 },
   cok: { name: "Coca Cola (Şişe)", unit: "Adet", limit: 5 },
+  cok_z: { name: "Coca Cola Zero", unit: "Adet", limit: 5 },
   fan: { name: "Fanta (Şişe)", unit: "Adet", limit: 5 },
   spr: { name: "Sprite (Şişe)", unit: "Adet", limit: 5 },
   fuse_seftali: { name: "Fuse Tea Şeftali", unit: "Adet", limit: 5 },
@@ -385,9 +391,6 @@ BAR_MENU.forEach(cat => {
 });
 searchIndex.sort((a, b) => b.searchStr.length - a.searchStr.length);
 
-/* =========================================================
-   SAFE LOCAL STORAGE LOADING
-   ========================================================= */
 function getSafeData(key, defaultData) {
     try { let data = localStorage.getItem(key); return data ? JSON.parse(data) : defaultData; } 
     catch(e) { return defaultData; }
@@ -398,9 +401,11 @@ let salesData = getSafeData('barSalesHistory_v3', {
   totalDrinks: 0, totalTables: 0, staffTables: 0, items: {}, baseItems: {}, categories: {},
   hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 }
 });
+
+// تصفير قيم الجرد الافتراضية بالكامل لتبدأ الإدخال اليدوي الخاص بك
 let stockData = getSafeData('barInventory_v2', {
-  kahve: 2000, sut: 10000, bardak: 150, cok: 24, fan: 24, spr: 24, fuse_seftali: 24, fuse_limon: 24,
-  cappy_visne: 24, cappy_karisik: 24, su: 60, ayran: 30, lim: 24, gazoz: 24, frutti: 24, sod: 30
+  kahve: 0, sut: 0, bardak: 0, cok: 0, cok_z: 0, fan: 0, spr: 0, fuse_seftali: 0, fuse_limon: 0,
+  cappy_visne: 0, cappy_karisik: 0, su: 0, ayran: 0, lim: 0, gazoz: 0, frutti: 0, sod: 0
 });
 
 let lastOpenedTableKey = null;
@@ -457,9 +462,14 @@ function renderTableMap() {
   tablesArray.forEach(t => {
     let card = document.createElement('div'); card.id = `card-${t.key}`; card.className = `table-card state-${t.state}`;
     let html = `<div class="table-name">${t.name}</div>`;
-    if (t.state === 1) { html += `<div class="waiting-text">⏳ Hazırlanıyor</div><div class="timer" id="timer-${t.key}">00:00</div>`; } 
-    else if (t.state === 2) { html += `<div class="waiting-text">✔️ Gönderildi</div><div class="timer" id="timer-${t.key}">00:00</div>`; }
-    if (t.batches && t.batches.length > 0) { html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`; }
+    
+    // تم إلغاء ظهور العداد الزمني داخل مربعات الطاولات هنا لمنع التشتيت
+    if (t.state === 1) { html += `<div class="waiting-text">⏳ Hazırlanıyor</div>`; } 
+    else if (t.state === 2) { html += `<div class="waiting-text">✔️ Gönderildi</div>`; }
+    
+    // يظهر زر العين دائماً إذا كانت الطاولة مفتوحة لفتح نافذة الحسابات المنبثقة
+    if (t.state > 0) { html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`; }
+    
     card.innerHTML = html; card.onclick = () => handleTableClick(t.key, t.name); grid.appendChild(card);
     let opt = document.createElement('option'); opt.value = t.key; opt.innerText = t.name + ((t.state > 0) ? " (Açık)" : ""); selector.appendChild(opt);
   });
@@ -467,15 +477,15 @@ function renderTableMap() {
   localStorage.setItem('barTableMap_v7', JSON.stringify(tablesData)); updateTimers(); 
 }
 
+// النقر على رقم الطاولة يفتحها ويحددها وينقلك فوراً لشاشة الطلبات لإدخال الأكواد بسرعة
 function handleTableClick(key, name) {
   let data = tablesData[key]; lastOpenedTableKey = key; 
   if (data.state === 0) { data.state = 1; data.startTime = Date.now(); } 
-  else if (data.state === 1) {
-    let diff = Math.floor((Date.now() - data.startTime) / 1000);
-    salesData.totalPrepSeconds += diff; salesData.prepCount += 1;
-    localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData)); data.state = 2; 
-  } else if (data.state === 2) { viewOrderModal(key, data.name); return; }
-  renderTableMap();
+  
+  renderTableMap(); 
+  
+  document.getElementById('menuTableSelect').value = key;
+  switchTab('menuView', document.getElementById('tabMenu'));
 }
 
 let selectedTableKeyModal = null;
@@ -569,14 +579,25 @@ function modalCancelTable() {
   }
 }
 
+// تحديث العدادات وعرضها فقط في الجزء العلوي المخصص لشريط الطاولة المحددة حالياً
 function updateTimers() {
   let now = Date.now();
+  let currentSelKey = document.getElementById('menuTableSelect').value;
+  let stickyTimerEl = document.getElementById('stickyTableTimer');
+  if(stickyTimerEl) stickyTimerEl.innerText = ""; 
+  
   for (const key in tablesData) {
     let data = tablesData[key];
     if (data.state > 0 && data.startTime) {
       let diffSecs = Math.floor((now - data.startTime) / 1000); let mins = Math.floor(diffSecs / 60); let secs = diffSecs % 60;
-      let timerEl = document.getElementById(`timer-${key}`);
-      if(timerEl) timerEl.innerText = (mins < 10 ? "0"+mins : mins) + ":" + (secs < 10 ? "0"+secs : secs);
+      let formattedTime = (mins < 10 ? "0"+mins : mins) + ":" + (secs < 10 ? "0"+secs : secs);
+      
+      if (key === currentSelKey) {
+        if(stickyTimerEl) {
+          stickyTimerEl.innerText = (data.state === 1 ? "⏳ " : "✔️ ") + formattedTime;
+          stickyTimerEl.style.color = (data.state === 1 ? "var(--warning)" : "var(--good)");
+        }
+      }
     }
   }
 }
@@ -600,6 +621,7 @@ function consumeInventoryRecipe(baseId, variant, qty) {
   else if (baseId === "fil") { stockData.kahve -= (15 * qty); } 
   else if (baseId === "sut") { stockData.sut -= (100 * qty); }
   else if (baseId === "cok") { stockData.cok -= qty; }
+  else if (baseId === "cok_z") { stockData.cok_z -= qty; } // خصم كولا زيرو تلقائياً
   else if (baseId === "fan") { stockData.fan -= qty; }
   else if (baseId === "spr") { stockData.spr -= qty; }
   else if (baseId === "su") { stockData.su -= qty; }
@@ -659,69 +681,65 @@ document.getElementById('quickAddInput').addEventListener('input', function() {
   else if(code) { hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)"; } else { hintEl.innerText = ""; }
 });
 
+// الضغط على Enter والحقل فارغ يُرسل الطلب فوراً كأنك ضغطت يدوياً على Masaya Gönder لمزيد من السرعة
 document.getElementById('quickAddInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') {
-    e.preventDefault(); let code = this.value.trim();
-    if (quickCodeMap[code]) { let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code); this.value = ''; document.getElementById('quickAddHint').innerText = ''; } 
+    e.preventDefault(); 
+    let code = this.value.trim();
+    if (code === '') {
+      assignOrderToTable();
+      return;
+    }
+    if (quickCodeMap[code]) { 
+      let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code); 
+      this.value = ''; document.getElementById('quickAddHint').innerText = ''; 
+    } 
     else { this.style.borderColor = 'var(--bad)'; setTimeout(() => this.style.borderColor = 'var(--accent)', 300); }
   }
 });
 
+document.getElementById('cameraFileInput').addEventListener('click', function() { this.value = null; });
 
-// 📷 قراءة النص المعتمدة على المطابقة الدقيقة مع حل مشكلة تعليق الكاميرا
+function compressImage(file, callback) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let img = new Image();
+        img.onload = function() {
+            let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
+            let MAX_WIDTH = 1000; let ratio = 1;
+            if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
+            canvas.width = img.width * ratio; canvas.height = img.height * ratio;
+            ctx.filter = 'grayscale(100%)'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            callback(canvas.toDataURL('image/jpeg', 0.9));
+        }; img.src = e.target.result;
+    }; reader.readAsDataURL(file);
+}
+
 document.getElementById('cameraFileInput').addEventListener('change', function(e) {
-  let file = e.target.files[0];
-  
-  // الحل الجذري: مسح قيمة الزر فوراً بعد أخذ الصورة لكي يفتح فوراً في المرة القادمة
-  e.target.value = ''; 
-  
-  if (!file) return;
+  let file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  let btnLabel = document.getElementById('cameraBtnLabel'); btnLabel.innerHTML = "⏳"; 
 
-  let btnLabel = document.getElementById('cameraBtnLabel');
-  btnLabel.innerHTML = "⏳"; 
-
-  let reader = new FileReader();
-  reader.onload = function(e) {
-      let img = new Image();
-      img.onload = function() {
-          let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
-          let MAX_WIDTH = 1000; let ratio = 1;
-          if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
-          canvas.width = img.width * ratio; canvas.height = img.height * ratio;
-          ctx.filter = 'grayscale(100%)'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          let compressedImageData = canvas.toDataURL('image/jpeg', 0.9);
-
-          if(typeof Tesseract === 'undefined') { 
-              alert("Yapay zeka modülü yükleniyor, lütfen internet bağlantınızı kontrol edip tekrar deneyin."); 
-              btnLabel.innerHTML = "📷"; 
-              return; 
-          }
-          Tesseract.recognize(compressedImageData, 'tur').then(({ data: { text } }) => {
-            let normalizedText = normalizeForOCR(text);
-            let addedCount = 0;
-            
-            searchIndex.forEach(item => {
-               let matchIndex = normalizedText.indexOf(item.searchStr);
-               if(matchIndex !== -1) {
-                   let qty = 1;
-                   let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
-                   let qtyMatch = preText.match(/(\d+)x/);
-                   if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
-                   
-                   for(let i=0; i<qty; i++){ addTempItem(item.id, item.name, item.variant, item.code); }
-                   addedCount += qty;
-                   normalizedText = normalizedText.replace(item.searchStr, "");
-               }
-            });
-            
-            if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı ve sepete eklendi!`); } 
-            else { alert("Adisyonda eşleşen içecek bulunamadı. Lütfen yazının net olduğuna emin olun."); }
-            btnLabel.innerHTML = "📷";
-          }).catch(err => { alert("Fotoğraf okunurken hata oluştu."); btnLabel.innerHTML = "📷"; });
-      }; img.src = e.target.result;
-  }; reader.readAsDataURL(file);
+  compressImage(file, function(compressedImageData) {
+      if(typeof Tesseract === 'undefined') { 
+          alert("Yapay zeka modülü yükleniyor, lütfen tekrar deneyin."); 
+          btnLabel.innerHTML = "📷"; return; 
+      }
+      Tesseract.recognize(compressedImageData, 'tur').then(({ data: { text } }) => {
+        let normalizedText = normalizeForOCR(text); let addedCount = 0;
+        searchIndex.forEach(item => {
+           let matchIndex = normalizedText.indexOf(item.searchStr);
+           if(matchIndex !== -1) {
+               let qty = 1; let preText = normalizedText.substring(Math.max(0, matchIndex - 5), matchIndex);
+               let qtyMatch = preText.match(/(\d+)x/); if(qtyMatch && qtyMatch[1]) { qty = parseInt(qtyMatch[1]); }
+               for(let i=0; i<qty; i++){ addTempItem(item.id, item.name, item.variant, item.code); }
+               addedCount += qty; normalizedText = normalizedText.replace(item.searchStr, "");
+           }
+        });
+        if(addedCount > 0) { alert(`🎉 Adisyondan ${addedCount} içecek algılandı!`); } else { alert("Adisyonda eşleşen içecek bulunamadı."); }
+        btnLabel.innerHTML = "📷";
+      }).catch(err => { alert("Hata oluştu."); btnLabel.innerHTML = "📷"; });
+  });
 });
-
 
 function addTempItem(id, name, variant, code) {
   let key = variant ? `${id}_${variant}` : id; let displayName = variant ? `${name} (${variant})` : name;
