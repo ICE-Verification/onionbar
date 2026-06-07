@@ -66,14 +66,20 @@
     .state-1 .waiting-text { color: #d39e00; }
     .state-2 .waiting-text { color: var(--good); }
     
+    /* زري العين والصح في الزوايا المتقابلة */
     .view-order-btn {
       position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.1); border: none;
       border-radius: 4px; padding: 4px 6px; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 10;
+    }
+    .sent-order-btn {
+      position: absolute; top: 4px; left: 4px; background: rgba(25, 135, 84, 0.15); border: none;
+      border-radius: 4px; padding: 4px 6px; font-size: 12px; cursor: pointer; font-weight: bold; color: var(--good); z-index: 10;
     }
 
     /* ================= MODALS ================= */
     #tableModalBackdrop, #shiftSummaryBackdrop { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
     .modal-box { background: #fff; padding: 15px; border-radius: 12px; width: 92%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
+    .modal-box html { border: none; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 12px; }
     .modal-header h3 { margin: 0; font-size: 18px; color: var(--accent); }
     
@@ -90,7 +96,6 @@
     /* ================= BAR MENU ================= */
     .bar-menu-container { max-width: 900px; margin: 0 auto; padding: 10px; }
     
-    /* الهيكل الموحد المطور لثبات القوائم العلوية 100% */
     .menu-sticky-wrapper {
       position: -webkit-sticky; position: sticky; top: 100px; z-index: 85; background: var(--bg); padding-bottom: 8px;
     }
@@ -176,7 +181,7 @@
 <div id="mapView" class="app-view active">
   <div class="map-container">
     <div id="allTablesGrid" class="grid-container active"></div>
-    <button class="btn" style="background:var(--bad); color:white; width:100%; margin-top:15px; padding:12px;" onclick="initiateShiftReset()">Tüm Sistemi Sıfırla (Vardiya Bitir)</button>
+    <button class="btn" style="background:var(--bad); color:white; width:100%; margin-top:15px; padding:12px;" onclick="initiateShiftReset()">Tüm Sistemi Sıفırla (Vardiya Bitir)</button>
   </div>
 </div>
 
@@ -296,15 +301,12 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <script>
-/* =========================================================
-   MENU DATA & CATEGORY MAPPING (COCA COLA ZERO ADDED)
-   ========================================================= */
 const BAR_MENU = [
   {
     category: "Soğuk İçecekler",
     items: [
       { id:"cok", name: "COCA COLA", code: "1" },
-      { id:"cok_z", name: "COCA COLA ZERO", code: "2" }, // إعادتها لقاموس الأكواد والذكاء الاصطناعي
+      { id:"cok_z", name: "COCA COLA ZERO", code: "2" },
       { id:"fan", name: "FANTA", code: "3" },
       { id:"spr", name: "SPRİTE", code: "4" },
       { id:"fuse", name: "FUSE TEA", variants: [{v:"Şeftali", code:"5"}, {v:"Limon", code:"6"}] },
@@ -402,8 +404,8 @@ let salesData = getSafeData('barSalesHistory_v3', {
   hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 }
 });
 
-// تصفير قيم الجرد الافتراضية بالكامل لتبدأ الإدخال اليدوي الخاص بك
-let stockData = getSafeData('barInventory_v2', {
+// مفتاح جديد لتصفير كامل أرقام الجرد وضمان بدء الجرد من الصفر (0)
+let stockData = getSafeData('barInventory_v3', {
   kahve: 0, sut: 0, bardak: 0, cok: 0, cok_z: 0, fan: 0, spr: 0, fuse_seftali: 0, fuse_limon: 0,
   cappy_visne: 0, cappy_karisik: 0, su: 0, ayran: 0, lim: 0, gazoz: 0, frutti: 0, sod: 0
 });
@@ -463,12 +465,14 @@ function renderTableMap() {
     let card = document.createElement('div'); card.id = `card-${t.key}`; card.className = `table-card state-${t.state}`;
     let html = `<div class="table-name">${t.name}</div>`;
     
-    // تم إلغاء ظهور العداد الزمني داخل مربعات الطاولات هنا لمنع التشتيت
     if (t.state === 1) { html += `<div class="waiting-text">⏳ Hazırlanıyor</div>`; } 
     else if (t.state === 2) { html += `<div class="waiting-text">✔️ Gönderildi</div>`; }
     
-    // يظهر زر العين دائماً إذا كانت الطاولة مفتوحة لفتح نافذة الحسابات المنبثقة
+    // أيقونة العين لفتح المودال في الأعلى يميناً
     if (t.state > 0) { html += `<button class="view-order-btn" onclick="event.stopPropagation(); viewOrderModal('${t.key}', '${t.name}')">👁️</button>`; }
+    
+    // رمز الصح في الزاوية المقابلة (أعلى يسار) للطاولة المفتوحة قيد التحضير لإرسالها مباشرة
+    if (t.state === 1) { html += `<button class="sent-order-btn" onclick="event.stopPropagation(); markTableAsSent('${t.key}')">✔️</button>`; }
     
     card.innerHTML = html; card.onclick = () => handleTableClick(t.key, t.name); grid.appendChild(card);
     let opt = document.createElement('option'); opt.value = t.key; opt.innerText = t.name + ((t.state > 0) ? " (Açık)" : ""); selector.appendChild(opt);
@@ -477,15 +481,24 @@ function renderTableMap() {
   localStorage.setItem('barTableMap_v7', JSON.stringify(tablesData)); updateTimers(); 
 }
 
-// النقر على رقم الطاولة يفتحها ويحددها وينقلك فوراً لشاشة الطلبات لإدخال الأكواد بسرعة
 function handleTableClick(key, name) {
   let data = tablesData[key]; lastOpenedTableKey = key; 
   if (data.state === 0) { data.state = 1; data.startTime = Date.now(); } 
   
   renderTableMap(); 
-  
   document.getElementById('menuTableSelect').value = key;
   switchTab('menuView', document.getElementById('tabMenu'));
+}
+
+// دالة إرسال الطلب السريع بنقرة رمز الصح وتحتسب سرعة التحضير
+function markTableAsSent(key) {
+  let data = tablesData[key];
+  if (data.state === 1 && data.startTime) {
+    let diff = Math.floor((Date.now() - data.startTime) / 1000);
+    salesData.totalPrepSeconds += diff; salesData.prepCount += 1;
+    localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData));
+  }
+  data.state = 2; renderTableMap();
 }
 
 let selectedTableKeyModal = null;
@@ -546,27 +559,23 @@ function modalMarkReady() {
 function modalRevertToPrep() { tablesData[selectedTableKeyModal].state = 1; renderTableMap(); closeOrderModal(); }
 
 function modalCheckoutTable() {
-  let data = tablesData[selectedTableKeyModal];
-  let isStaff = (data.section === 'staff');
+  let data = tablesData[selectedTableKeyModal]; let isStaff = (data.section === 'staff');
   if(confirm(isStaff ? "Personel tüketimini kaydetmek istiyor musunuz?" : "Masayı kapatıp SATIŞ OLARAK KAYDETMEK istiyor musunuz?")) {
     if(data.batches && data.batches.length > 0) {
       if (isStaff) { salesData.staffTables += 1; } else { salesData.totalTables += 1; }
       salesData.sections[data.section] = (salesData.sections[data.section] || 0) + 1;
       let hour = new Date().getHours().toString();
-      
       data.batches.forEach(batch => {
         batch.items.forEach(item => {
           salesData.totalDrinks += item.qty;
           salesData.items[item.name] = (salesData.items[item.name] || 0) + item.qty;
           salesData.baseItems[item.baseId] = (salesData.baseItems[item.baseId] || 0) + item.qty;
           salesData.hourlySales[hour] = (salesData.hourlySales[hour] || 0) + item.qty;
-          let cat = itemCategoryMap[item.baseId] || "Diğer";
-          salesData.categories[cat] = (salesData.categories[cat] || 0) + item.qty;
+          let cat = itemCategoryMap[item.baseId] || "Diğer"; salesData.categories[cat] = (salesData.categories[cat] || 0) + item.qty;
           consumeInventoryRecipe(item.baseId, item.variant, item.qty);
         });
       });
-      localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData));
-      localStorage.setItem('barInventory_v2', JSON.stringify(stockData));
+      localStorage.setItem('barSalesHistory_v3', JSON.stringify(salesData)); localStorage.setItem('barInventory_v2', JSON.stringify(stockData));
     }
     data.state = 0; data.startTime = null; data.batches = []; renderTableMap(); closeOrderModal();
   }
@@ -574,29 +583,21 @@ function modalCheckoutTable() {
 
 function modalCancelTable() {
   if(confirm("DİKKAT: Masayı silmek istediğinize emin misiniz?")) {
-    let data = tablesData[selectedTableKeyModal]; data.state = 0; data.startTime = null; data.batches = [];
-    renderTableMap(); closeOrderModal();
+    let data = tablesData[selectedTableKeyModal]; data.state = 0; data.startTime = null; data.batches = []; renderTableMap(); closeOrderModal();
   }
 }
 
-// تحديث العدادات وعرضها فقط في الجزء العلوي المخصص لشريط الطاولة المحددة حالياً
 function updateTimers() {
-  let now = Date.now();
-  let currentSelKey = document.getElementById('menuTableSelect').value;
-  let stickyTimerEl = document.getElementById('stickyTableTimer');
+  let now = Date.now(); let currentSelKey = document.getElementById('menuTableSelect').value; let stickyTimerEl = document.getElementById('stickyTableTimer');
   if(stickyTimerEl) stickyTimerEl.innerText = ""; 
-  
   for (const key in tablesData) {
     let data = tablesData[key];
     if (data.state > 0 && data.startTime) {
       let diffSecs = Math.floor((now - data.startTime) / 1000); let mins = Math.floor(diffSecs / 60); let secs = diffSecs % 60;
       let formattedTime = (mins < 10 ? "0"+mins : mins) + ":" + (secs < 10 ? "0"+secs : secs);
-      
-      if (key === currentSelKey) {
-        if(stickyTimerEl) {
-          stickyTimerEl.innerText = (data.state === 1 ? "⏳ " : "✔️ ") + formattedTime;
-          stickyTimerEl.style.color = (data.state === 1 ? "var(--warning)" : "var(--good)");
-        }
+      if (key === currentSelKey && stickyTimerEl) {
+         stickyTimerEl.innerText = (data.state === 1 ? "⏳ " : "✔️ ") + formattedTime;
+         stickyTimerEl.style.color = (data.state === 1 ? "var(--warning)" : "var(--good)");
       }
     }
   }
@@ -621,7 +622,7 @@ function consumeInventoryRecipe(baseId, variant, qty) {
   else if (baseId === "fil") { stockData.kahve -= (15 * qty); } 
   else if (baseId === "sut") { stockData.sut -= (100 * qty); }
   else if (baseId === "cok") { stockData.cok -= qty; }
-  else if (baseId === "cok_z") { stockData.cok_z -= qty; } // خصم كولا زيرو تلقائياً
+  else if (baseId === "cok_z") { stockData.cok_z -= qty; }
   else if (baseId === "fan") { stockData.fan -= qty; }
   else if (baseId === "spr") { stockData.spr -= qty; }
   else if (baseId === "su") { stockData.su -= qty; }
@@ -638,8 +639,6 @@ function consumeInventoryRecipe(baseId, variant, qty) {
 /* =========================================================
    BAR MENU & OCR
    ========================================================= */
-let activeCatIndex = 0; let tempCart = {}; 
-
 function renderCategories() {
   try {
     const tabs = document.getElementById("catTabs"); tabs.innerHTML = "";
@@ -659,7 +658,6 @@ function renderItems() {
         let qtyB = (salesData && salesData.baseItems && salesData.baseItems[b.id]) ? salesData.baseItems[b.id] : 0;
         return qtyB - qtyA; 
     });
-
     items.forEach(it => {
       let square = document.createElement("div"); square.className = "item-square";
       let html = `<div class="item-name" style="text-transform: capitalize;">${it.name.toLowerCase()}</div>`;
@@ -681,19 +679,12 @@ document.getElementById('quickAddInput').addEventListener('input', function() {
   else if(code) { hintEl.innerText = "Hatalı Kod!"; hintEl.style.color = "var(--bad)"; } else { hintEl.innerText = ""; }
 });
 
-// الضغط على Enter والحقل فارغ يُرسل الطلب فوراً كأنك ضغطت يدوياً على Masaya Gönder لمزيد من السرعة
+// الضغط على Enter والحقل فارغ يعيدك فوراً إلى صفحة الطاولات الرئيسية
 document.getElementById('quickAddInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') {
-    e.preventDefault(); 
-    let code = this.value.trim();
-    if (code === '') {
-      assignOrderToTable();
-      return;
-    }
-    if (quickCodeMap[code]) { 
-      let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code); 
-      this.value = ''; document.getElementById('quickAddHint').innerText = ''; 
-    } 
+    e.preventDefault(); let code = this.value.trim();
+    if (code === '') { switchTab('mapView', document.getElementById('tabMap')); return; }
+    if (quickCodeMap[code]) { let item = quickCodeMap[code]; addTempItem(item.id, item.name, item.variant, code); this.value = ''; document.getElementById('quickAddHint').innerText = ''; } 
     else { this.style.borderColor = 'var(--bad)'; setTimeout(() => this.style.borderColor = 'var(--accent)', 300); }
   }
 });
@@ -706,8 +697,7 @@ function compressImage(file, callback) {
         let img = new Image();
         img.onload = function() {
             let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
-            let MAX_WIDTH = 1000; let ratio = 1;
-            if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
+            let MAX_WIDTH = 1000; let ratio = 1; if(img.width > MAX_WIDTH) { ratio = MAX_WIDTH / img.width; }
             canvas.width = img.width * ratio; canvas.height = img.height * ratio;
             ctx.filter = 'grayscale(100%)'; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             callback(canvas.toDataURL('image/jpeg', 0.9));
@@ -718,12 +708,8 @@ function compressImage(file, callback) {
 document.getElementById('cameraFileInput').addEventListener('change', function(e) {
   let file = e.target.files[0]; e.target.value = ''; if (!file) return;
   let btnLabel = document.getElementById('cameraBtnLabel'); btnLabel.innerHTML = "⏳"; 
-
   compressImage(file, function(compressedImageData) {
-      if(typeof Tesseract === 'undefined') { 
-          alert("Yapay zeka modülü yükleniyor, lütfen tekrar deneyin."); 
-          btnLabel.innerHTML = "📷"; return; 
-      }
+      if(typeof Tesseract === 'undefined') { alert("Yapay zeka modülü yükleniyor, lütfen tekrar deneyin."); btnLabel.innerHTML = "📷"; return; }
       Tesseract.recognize(compressedImageData, 'tur').then(({ data: { text } }) => {
         let normalizedText = normalizeForOCR(text); let addedCount = 0;
         searchIndex.forEach(item => {
@@ -769,7 +755,6 @@ function assignOrderToTable() {
   let selTableKey = document.getElementById('menuTableSelect').value;
   if (!selTableKey) { alert("Lütfen bir masa seçin!"); return; }
   if (Object.keys(tempCart).length === 0) { alert("Lütfen önce içecek ekleyin!"); return; }
-
   let tableData = tablesData[selTableKey];
   let d = new Date(); let timeStr = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
   let newBatch = { time: timeStr, items: Object.keys(tempCart).map(k => ({ id: tempCart[k].id, baseId: tempCart[k].baseId, name: tempCart[k].name, qty: tempCart[k].qty })) };
@@ -786,7 +771,6 @@ function renderInventoryUI() {
   try {
     let listContainer = document.getElementById('inventoryStatusList'); let addSelect = document.getElementById('addStockSelect'); let zayiSelect = document.getElementById('zayiStockSelect');
     listContainer.innerHTML = ""; addSelect.innerHTML = ""; zayiSelect.innerHTML = "";
-
     for (let key in INVENTORY_ITEMS) {
         let item = INVENTORY_ITEMS[key]; let currentVal = stockData[key]; let isKritik = currentVal <= item.limit;
         let card = document.createElement('div'); card.className = `stok-row ${isKritik ? 'kritik' : ''}`;
@@ -804,7 +788,6 @@ function submitStockAction(type) {
   let qtyEl = document.getElementById(type === 'add' ? 'addStockQty' : 'zayiStockQty');
   let itemKey = selectEl.value; let qty = parseInt(qtyEl.value);
   if(!qty || qty <= 0) { alert("Lütfen geçerli bir miktar girin!"); return; }
-
   if(type === 'add') { stockData[itemKey] += qty; alert("Stok başarıyla güncellendi (Eklendi)."); } 
   else { stockData[itemKey] -= qty; alert("Zayi/Fire başarıyla stoktan düşüldü."); }
   qtyEl.value = ""; localStorage.setItem('barInventory_v2', JSON.stringify(stockData)); renderInventoryUI();
@@ -837,7 +820,6 @@ function initiateShiftReset() {
   let peakHour = "YOK"; let maxSales = 0;
   for(let h in salesData.hourlySales) { if(salesData.hourlySales[h] > maxSales) { maxSales = salesData.hourlySales[h]; peakHour = `${h}:00 - ${parseInt(h)+1}:00`; } }
   document.getElementById('sumPeakHour').innerText = peakHour;
-
   let peakSec = "YOK"; let maxSec = 0; let secNames = {'inside':'İç Mekan', 'outside':'Dış Mekan (B)', 'upstairs':'Üst Kat (A)', 'staff': 'Personel Tüketimi (P)'};
   for(let s in salesData.sections) { if(salesData.sections[s] > maxSec) { maxSec = salesData.sections[s]; peakSec = secNames[s]; } }
   document.getElementById('sumPeakSection').innerText = peakSec;
@@ -855,8 +837,7 @@ function confirmResetShift() {
   if(confirm("Emin misiniz? Tüm satış verileri silinecek (Stoklar kalacaktır) ve YENİ VARDİYA başlayacak!")) {
     tablesData = {}; localStorage.removeItem('barTableMap_v7');
     salesData = { totalDrinks: 0, totalTables: 0, staffTables: 0, items: {}, baseItems: {}, categories: {}, hourlySales: {}, totalPrepSeconds: 0, prepCount: 0, sections: { 'inside': 0, 'outside': 0, 'upstairs': 0, 'staff': 0 } };
-    localStorage.removeItem('barSalesHistory_v3');
-    document.getElementById('shiftSummaryBackdrop').style.display = 'none';
+    localStorage.removeItem('barSalesHistory_v3'); document.getElementById('shiftSummaryBackdrop').style.display = 'none';
     renderTableMap(); renderStats(); renderItems();
   }
 }
